@@ -68,7 +68,7 @@ void screenprint_draw_prints(void)
         short lines = PixelFont_DrawText(debugFont, dx, dy, scale, lineBuffer[line], LINE_LENGTH);
 
         dx = 0;
-        dy -= debugFont->ch * lines;
+        dy -= debugFont->ch * scale * lines;
         if (dy <= 0)
         {
             break;

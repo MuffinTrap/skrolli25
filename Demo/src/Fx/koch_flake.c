@@ -113,7 +113,7 @@ PointList* get_corners(float2 center, short amount, float radius, float angle, P
     float corners = (float)amount;
     float step = (M_PI * 2.0f) / corners;
     float radians = angle * M_DEG_TO_RAD;
-    float current_angle = 0.0f;
+    float current_angle = radians;
     float2 start = {0, radius};
     float2 point = {0,0};
     float2 rotated = {0,0};

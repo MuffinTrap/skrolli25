@@ -6,15 +6,19 @@
 #include "../include/display.h"
 #include <ctoy.h>
 #include "Ziz/opengl_include.h"
+#include "Fx/pointlist.h"
 #include "Fx/koch_flake.h"
+#include "Fx/rotation_fx.h"
 
 
 // Code
 #include "Ziz/pixel_font.c"
 #include "Ziz/screenprint.c"
 #include "Fx/koch_flake.c"
+#include "Fx/rotation_fx.c"
 
 static KochFlake flake;
+static PointList rotation_outer;
 
 
 void ctoy_begin(void)
@@ -25,6 +29,7 @@ void ctoy_begin(void)
 
 	flake.recursive_list = PointList_create(3);
 	flake.local_list = PointList_create(3);
+	rotation_outer = PointList_create(6);
 }
 
 void ctoy_end(void)
@@ -34,7 +39,7 @@ void ctoy_end(void)
 
 void clear_screen( void )
 {
-	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+	glClearColor(0.2f, 0.6f, 0.5f, 1.0f);
 	glViewport(0, 0, ctoy_frame_buffer_width(), ctoy_frame_buffer_height());
 #ifdef GEKKO
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -86,7 +91,6 @@ void tri()
 		glVertex2f(50.0f, 100.0f);
 	glEnd();
 }
-
 void ctoy_main_loop(void)
 {
 	clear_screen();
@@ -109,18 +113,30 @@ void ctoy_main_loop(void)
 	glPopMatrix();
 
 
+	glPushMatrix();
+	//float3 color1 = {0.8f, 0.2f, 0.35f};
+	float3 color1 = {0.2f, 0.2f, 0.2f};
+	float3 color2 = {0.2f, 0.2f, 0.5f};
+	float2 center = {ctoy_frame_buffer_width()/2, ctoy_frame_buffer_height()/2};
+	float speed = 4.0f;
+	float scale = 3.0f;
+	float progress = ctoy_get_time()/5;
+	rotation_fx(center, scale, speed, progress, color1, color2,
+				&rotation_outer, &flake.recursive_list, &flake.local_list);
+	glPopMatrix();
+	/*
 	start_frame_3D();
-	//float2 c = {ctoy_frame_buffer_width()/2, ctoy_frame_buffer_height()/2};
 	float3 c3 = {0.0f, 0.0f, -280.0f};
+
 
 	glPushMatrix();
 
 	glTranslatef(c3.x, c3.y, c3.z);
-	//glRotatef(45.0f, 1.0f, 0.0f, 1.0f);
 	glRotatef(ctoy_get_time()*60.0f, 0.3f, 1.0f, 0.0f);
-	//glRotatef((sin(ctoy_get_time()) + 2.0f) * 360, 1.0f, sin(ctoy_get_time()/2.0f), 1.0f);
 
-	float2 pos = {0.0f, 0.0f};
+	*/
+	glPushMatrix();
+	float2 pos = center;
 	flake.center = pos;
 	flake.radius = 160.0f;
 	flake.recursion_level = 3;
@@ -128,11 +144,10 @@ void ctoy_main_loop(void)
 	flake.ratio = 1.0f/3.0f;
 	flake.extrusion = 1.0f;
 
-		draw_snowflake_struct(&flake);
-		// void draw_snowflake(float2 center, float radius, short recursion, float angle, float ratio, float extrusion, PointList* recursive_list, PointList* local_list);
+	//	draw_snowflake_struct(&flake);
 	glPopMatrix();
 
-	screenprintf("I am all ears");
+	//screenprintf("I am all ears");
 	screenprint_draw_prints();
 
 	ctoy_swap_buffer(NULL);
