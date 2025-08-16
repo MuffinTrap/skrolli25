@@ -1,15 +1,30 @@
 
 // Headers
+#define M_MATH_IMPLEMENTATION
+#include <m_math.h>
+
 #include "../include/display.h"
 #include <ctoy.h>
+#include "Ziz/opengl_include.h"
+#include "Fx/koch_flake.h"
+
+
+// Code
 #include "Ziz/pixel_font.c"
 #include "Ziz/screenprint.c"
-#include "Ziz/opengl_include.h"
+#include "Fx/koch_flake.c"
+
+static KochFlake flake;
+
 
 void ctoy_begin(void)
 {
 	ctoy_window_title("Bnuy");
 	display_init(RESOLUTION_640x480, DEPTH_32_BPP, 2, GAMMA_NONE, FILTERS_DISABLED);
+
+
+	flake.recursive_list = PointList_create(3);
+	flake.local_list = PointList_create(3);
 }
 
 void ctoy_end(void)
@@ -59,15 +74,11 @@ void start_frame_2D( void )
 
 void tri()
 {
-	glPushMatrix();
-
 	glBegin(GL_TRIANGLES);
 	glVertex2f(10.0f, 10.0f);
 	glVertex2f(100.0f, 10.0f);
 	glVertex2f(50.0f, 100.0f);
 	glEnd();
-	glPopMatrix();
-
 }
 
 void ctoy_main_loop(void)
@@ -76,6 +87,7 @@ void ctoy_main_loop(void)
 	screenprint_start_frame();
 	screenprint_set_scale(2.0f);
 
+	glPushMatrix();
 	glColor3f(1.0f, 1.0f, 1.0f);
 	tri();
 	glTranslatef(100.0f, 0.0f, 0.0f);
@@ -87,6 +99,11 @@ void ctoy_main_loop(void)
 	tri();
 	glTranslatef(130.0f, 0.0f, 0.0f);
 	tri();
+	glPopMatrix();
+
+	float2 center = {ctoy_frame_buffer_width()/2, ctoy_frame_buffer_height()/2};
+	draw_snowflake(center, 40.0f, 0, 60, 0.3333f, 1.0f, &flake.recursive_list, &flake.local_list);
+	// void draw_snowflake(float2 center, float radius, short recursion, float angle, float ratio, float extrusion, PointList* recursive_list, PointList* local_list);
 
 	screenprintf("I am all ears");
 	screenprint_draw_prints();
