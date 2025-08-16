@@ -2,6 +2,7 @@
 #define KOCH_FLAKE_H
 
 #include <m_math.h>
+#include <stdbool.h>
 #include "pointlist.h"
 
 struct KochFlake
@@ -53,7 +54,7 @@ void draw_koch(float2 A, float2 B, short recursion, float angle, float ratio, fl
  */
 void draw_snowflake(float2 center, float radius, short recursion, float angle, float ratio, float extrusion, PointList* recursive_list, PointList* local_list);
 
-void draw_snowflake_struct(KochFlake flake);
+void draw_snowflake_struct(KochFlake* flake);
 
 /**
  * @brief Break the line from A to B up by ratio and create third point
