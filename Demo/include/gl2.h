@@ -17,6 +17,7 @@ typedef float GLclampf;
 typedef double GLdouble;
 typedef double GLclampd;
 typedef void GLvoid;
+typedef char GLchar;
 
 /* Constants */
 #define GL_FALSE 0

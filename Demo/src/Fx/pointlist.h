@@ -2,7 +2,7 @@
 #define POINTLIST_H
 
 #include <m_math.h>
-#include "../Ziz/opengl_include.h"
+#include <opengl_include.h>
 
 #define POINT_LIST_MAX_SIZE 4096
 

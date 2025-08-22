@@ -4,6 +4,7 @@
 #include <ctoy.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #include "opengl_include.h"
 

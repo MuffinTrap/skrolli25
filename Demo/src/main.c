@@ -3,9 +3,10 @@
 #define M_MATH_IMPLEMENTATION
 #include <m_math.h>
 
-#include "../include/display.h"
 #include <ctoy.h>
-#include "Ziz/opengl_include.h"
+#include <display.h>
+#include <opengl_include.h>
+
 #include "Fx/pointlist.h"
 #include "Fx/koch_flake.h"
 #include "Fx/rotation_fx.h"

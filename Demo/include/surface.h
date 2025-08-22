@@ -21,6 +21,7 @@ freely, subject to the following restrictions:
 #ifndef SURFACE_H
 #define SURFACE_H
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,6 +30,7 @@ extern "C" {
 #include <stddef.h>  // NULL, size_t
 #include <stdint.h>  // uint16_t, uint32_t
 #include <stdlib.h>  // malloc, free
+#include <stdio.h>   // printf
 #include <math.h>    // powf, fmaxf, fminf
 #include "gl2.h"
 
