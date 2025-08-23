@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 
 // Headers
 #define M_MATH_IMPLEMENTATION
@@ -7,21 +9,28 @@
 #include <display.h>
 #include <opengl_include.h>
 
+#include "Ziz/ObjModel.h"
 #include "Fx/pointlist.h"
 #include "Fx/koch_flake.h"
 #include "Fx/rotation_fx.h"
 #include "Fx/flake_wheel_fx.h"
+#include "Fx/bunny_fx.h"
 
 
 // Code
+#include "Ziz/ObjModel.c"
 #include "Ziz/pixel_font.c"
 #include "Ziz/screenprint.c"
 #include "Fx/koch_flake.c"
 #include "Fx/rotation_fx.c"
 #include "Fx/flake_wheel_fx.c"
+#include "Fx/bunny_fx.c"
 
 static KochFlake flake;
 static PointList rotation_outer;
+
+// Bunny fx
+static struct Bunny bunny_mesh;
 
 
 void ctoy_begin(void)
@@ -33,6 +42,9 @@ void ctoy_begin(void)
 	flake.recursive_list = PointList_create(3);
 	flake.local_list = PointList_create(3);
 	rotation_outer = PointList_create(6);
+
+	bunny_mesh = Bunny_Load("assets/bunny_medium.glb");
+
 }
 
 void ctoy_end(void)
@@ -53,7 +65,7 @@ void clear_screen( void )
 
 void start_frame_3D( void )
 {
-	//glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
     //glEnable(GL_CULL_FACE);
     //glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
@@ -63,7 +75,9 @@ void start_frame_3D( void )
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(90.0, 4.0/3.0, 0.01f, 1000.0f);
-	gluLookAt(0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	gluLookAt(0.0f, 0.0f, 1.0f,
+			  0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -110,6 +124,22 @@ void ears()
 		tri();
 		glTranslatef(130.0f, 0.0f, 0.0f);
 		tri();
+	glPopMatrix();
+
+}
+
+void bunny()
+{
+	start_frame_3D();
+	glPushMatrix();
+
+	float3 c3 = {0.0f, 0.0f, 0.7f};
+	glTranslatef(c3.x, c3.y, c3.z);
+
+	glRotatef(ctoy_get_time()*60.0f, 0.3f, 1.0f, 0.0f);
+	glColor3f(1.0f, 1.0f, 1.0f);
+	Bunny_Draw_immediate(&bunny_mesh, DrawTriangles);
+
 	glPopMatrix();
 
 }
@@ -174,7 +204,7 @@ void ctoy_main_loop(void)
 	screenprint_start_frame();
 	screenprint_set_scale(2.0f);
 
-	flake_wheel();
+	bunny();
 
 	screenprintf("I am all ears");
 	screenprint_draw_prints();
