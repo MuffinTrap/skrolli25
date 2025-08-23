@@ -49,4 +49,7 @@ build/
 Demo/.kdev4/
 *.kdev4
 
+# Work files
+Work/
+
 

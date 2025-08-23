@@ -15,9 +15,14 @@
 #include "Fx/rotation_fx.h"
 #include "Fx/flake_wheel_fx.h"
 #include "Fx/bunny_fx.h"
+#include "Fx/color_manager.h"
+#include "Fx/gradient.h"
+#include "Fx/gradient_mesh.h"
 
 
 // Code
+#include <texture.c>
+
 #include "Ziz/ObjModel.c"
 #include "Ziz/pixel_font.c"
 #include "Ziz/screenprint.c"
@@ -25,6 +30,9 @@
 #include "Fx/rotation_fx.c"
 #include "Fx/flake_wheel_fx.c"
 #include "Fx/bunny_fx.c"
+#include "Fx/color_manager.c"
+#include "Fx/gradient.c"
+#include "Fx/gradient_mesh.c"
 
 static KochFlake flake;
 static PointList rotation_outer;
