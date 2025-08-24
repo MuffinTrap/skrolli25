@@ -6,14 +6,15 @@
 #define GRADIENT_SIZE 8
 struct Gradient
 {
-    color3 colors[GRADIENT_SIZE];
+    color3* colors[GRADIENT_SIZE];
     float stops[GRADIENT_SIZE];
     short color_amount;
 };
 
 struct Gradient Gradient_CreateEmpty(void);
-void Gradient_PushColor(struct Gradient* gradient, color3 color, float stop);
+void Gradient_PushColor(struct Gradient* gradient, color3* color, float stop);
 void Gradient_glColor(struct Gradient* gradient, float stop);
+void Gradient_glColorA(struct Gradient* gradient, float stop, float alpha);
 color3 Gradient_GetColor(struct Gradient* gradient, float stop);
 
 #endif

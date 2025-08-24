@@ -14,7 +14,11 @@ typedef struct color3 color3;
 enum ColorName
 {
     ColorWhite,
-    ColorBlack
+    ColorBlack,
+
+    ColorRose,
+    ColorPurple,
+    ColorCyanblue
 };
 
 void ColorManager_LoadColors(void);

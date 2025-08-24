@@ -29,6 +29,10 @@ void ColorManager_LoadColors()
 
     colors[ColorWhite] = ColorManager_HexToColor(0xffffffff);
     colors[ColorBlack] = ColorManager_HexToColor(0x000000ff);
+
+    colors[ColorRose] = ColorManager_HexToColor(0xd16ba5ff);
+    colors[ColorPurple] = ColorManager_HexToColor(0x86a8e7ff);
+    colors[ColorCyanblue] = ColorManager_HexToColor(0x5ffbf1ff);
 }
 
 color3* ColorManager_Get(short index)

@@ -82,6 +82,7 @@ sprite_t *sprite_load(const char *filename) {
         free(sprite);
         return NULL;
     }
+    printf("stbi_load loaded %s: w %d, h %d, ch %d\n", filename, sprite->width, sprite->height, sprite->channels);
 
     return sprite;
 }
@@ -249,6 +250,10 @@ int bind_texture(int id) {
             case 1: 
                 internalFormat = GL_LUMINANCE;
                 format = GL_RED;
+                break;
+            case 2:
+                internalFormat = GL_LUMINANCE_ALPHA;
+                format = GL_LUMINANCE_ALPHA;
                 break;
             case 3: 
                 internalFormat = GL_RGB8;

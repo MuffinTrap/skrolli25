@@ -3,6 +3,7 @@
 
 #include "GL_macros.h"
 
-GLuint load_texture(const char* filename);
+int addTexture(const char* filename);
 
+int bind_texture(int id);
 #endif // TEXTURE_H

@@ -227,7 +227,7 @@ struct Mesh load_to_mesh(int model_index)
                         //glTexCoord2f(texcoords[index * 2 + 0], 1.0f - texcoords[index * 2 + 1]);
                         size_t i = index * 2;
                         ziz_mesh.texcoords[i + 0] = texcoords[i + 0];
-                        ziz_mesh.texcoords[i + 1] = 1.0f - texcoords[i + 1];
+                        ziz_mesh.texcoords[i + 1] = texcoords[i + 1]; // Flip y here if needed
                     }
                     if (colors) {
                         // glColor3f(colors[index * 3 + 0], colors[index * 3 + 1], colors[index * 3 + 2]);
@@ -256,7 +256,7 @@ struct Mesh load_to_mesh(int model_index)
                             // glTexCoord2f(texcoords[v * 2 + 0], 1.0f - texcoords[v * 2 + 1]);
                             size_t i = v * 2;
                             ziz_mesh.texcoords[i + 0] = texcoords[i + 0];
-                            ziz_mesh.texcoords[i + 1] = 1.0f - texcoords[i + 1];
+                            ziz_mesh.texcoords[i + 1] = texcoords[i + 1];
                         }
                         /*
                          i f (colors) {                   *

@@ -21,7 +21,7 @@
 
 
 // Code
-#include <texture.c>
+#include "../include/texture.c"
 
 #include "Ziz/ObjModel.c"
 #include "Ziz/pixel_font.c"
@@ -40,6 +40,10 @@ static PointList rotation_outer;
 // Bunny fx
 static struct Bunny bunny_mesh;
 
+// Bunny gradient
+static struct GradientMesh gradient_mesh;
+static struct Gradient rainbow_gradient;
+
 
 void ctoy_begin(void)
 {
@@ -53,6 +57,16 @@ void ctoy_begin(void)
 
 	bunny_mesh = Bunny_Load("assets/bunny_medium.glb");
 
+	ColorManager_LoadColors();
+	rainbow_gradient = Gradient_CreateEmpty();
+	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorRose), 0.0f);
+	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorPurple), 0.5f);
+	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorCyanblue), 1.0f);
+
+	int bunny_texture_id = addTexture("assets/lost_bun.png");
+    GLuint gl_tex_name = bind_texture(bunny_texture_id);
+
+	gradient_mesh = GradientMesh_Create(&rainbow_gradient, gl_tex_name, GradientVertical);
 }
 
 void ctoy_end(void)
@@ -74,8 +88,6 @@ void clear_screen( void )
 void start_frame_3D( void )
 {
 	glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_CULL_FACE);
-    //glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
@@ -96,8 +108,8 @@ void start_frame_2D( void )
 
     //glDisable(GL_TEXTURE_2D);
     //glDisable(GL_LIGHTING);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glEnable(GL_BLEND);
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -117,7 +129,7 @@ void tri()
 	glEnd();
 }
 
-void ears()
+void fx_ears()
 {
 	// Ears
 	glPushMatrix();
@@ -136,7 +148,20 @@ void ears()
 
 }
 
-void bunny()
+void fx_gradient_bunny(short x, short y, float scale)
+{
+	start_frame_2D();
+	glPushMatrix();
+
+		glTranslatef(x, y, 0.0f);
+		glScalef(scale, scale, 1.0f);
+
+		GradientMesh_Draw(&gradient_mesh);
+	glPopMatrix();
+
+}
+
+void fx_stanford_bunny()
 {
 	start_frame_3D();
 	glPushMatrix();
@@ -152,7 +177,7 @@ void bunny()
 
 }
 
-void rotation_illusion()
+void fx_rotation_illusion()
 {
 	float2 center = {ctoy_frame_buffer_width()/2, ctoy_frame_buffer_height()/2};
 	glPushMatrix();
@@ -167,7 +192,7 @@ void rotation_illusion()
 	glPopMatrix();
 }
 
-void single_flake()
+void fx_single_flake()
 {
 
 	float3 c3 = {0.0f, 0.0f, -280.0f};
@@ -188,7 +213,7 @@ void single_flake()
 	glPopMatrix();
 }
 
-void flake_wheel()
+void fx_flake_wheel()
 {
 
 	glPushMatrix();
@@ -212,7 +237,7 @@ void ctoy_main_loop(void)
 	screenprint_start_frame();
 	screenprint_set_scale(2.0f);
 
-	bunny();
+	fx_gradient_bunny(120, 20, 450.0f);
 
 	screenprintf("I am all ears");
 	screenprint_draw_prints();
