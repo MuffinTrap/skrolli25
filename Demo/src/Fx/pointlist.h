@@ -51,6 +51,19 @@ void PointList_set_point(PointList* list, float2 point, int index)
     }
 }
 
+float2 PointList_get_last(PointList* list)
+{
+    if (list->used_size > 0)
+    {
+        return list->points[list->used_size-1];
+    }
+    else
+    {
+        float2 zero = {0.0f, 0.0f};
+        return zero;
+    }
+}
+
 void PointList_push_point(PointList* list, float2 point)
 {
     if (list->used_size >= list->allocated_size)

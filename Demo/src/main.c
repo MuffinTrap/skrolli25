@@ -18,6 +18,7 @@
 #include "Fx/color_manager.h"
 #include "Fx/gradient.h"
 #include "Fx/gradient_mesh.h"
+#include "Fx/gosper_curve.h"
 
 
 // Code
@@ -33,6 +34,7 @@
 #include "Fx/color_manager.c"
 #include "Fx/gradient.c"
 #include "Fx/gradient_mesh.c"
+#include "Fx/gosper_curve.c"
 
 static KochFlake flake;
 static PointList rotation_outer;
@@ -43,6 +45,11 @@ static struct Bunny bunny_mesh;
 // Bunny gradient
 static struct GradientMesh gradient_mesh;
 static struct Gradient rainbow_gradient;
+
+// Gosper curve fx
+static PointList gosper_list;
+static float gosper_length = 0.0f;
+static float gosper_speed = 0.0f;
 
 
 void ctoy_begin(void)
@@ -67,6 +74,10 @@ void ctoy_begin(void)
     GLuint gl_tex_name = bind_texture(bunny_texture_id);
 
 	gradient_mesh = GradientMesh_Create(&rainbow_gradient, gl_tex_name, GradientVertical);
+
+	float2 gstart = {10.0f, 10.0f};
+	float2 gdir = {0.5f, 0.5f};
+	gosper_list = Gosper_Create(gstart, gdir, 5.0f, 2);
 }
 
 void ctoy_end(void)
@@ -161,6 +172,21 @@ void fx_gradient_bunny(short x, short y, float scale)
 
 }
 
+void fx_gosper_curve(short x, short y, float scale)
+{
+	start_frame_2D();
+	glPushMatrix();
+
+		glTranslatef(x, y, 0.0f);
+		glScalef(scale, scale, 1.0f);
+		glColor3f(1.0f, 1.0f, 1.0f);
+
+		Gosper_Draw(&gosper_list, gosper_length);
+	glPopMatrix();
+	gosper_length += gosper_speed;
+
+}
+
 void fx_stanford_bunny()
 {
 	start_frame_3D();
@@ -237,7 +263,9 @@ void ctoy_main_loop(void)
 	screenprint_start_frame();
 	screenprint_set_scale(2.0f);
 
-	fx_gradient_bunny(120, 20, 450.0f);
+	//fx_gradient_bunny(120, 20, 450.0f);
+	gosper_speed = 0.1f;
+	fx_gosper_curve(120, 220, 5.0f);
 
 	screenprintf("I am all ears");
 	screenprint_draw_prints();
