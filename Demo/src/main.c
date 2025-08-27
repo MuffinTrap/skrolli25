@@ -48,7 +48,11 @@
 #endif
 
 // Rocket tracks
-static int track_scene;
+static int track_scene;	// Currently active scene
+static int track_translate_x; // glTranslate x for effect
+static int track_translate_y; // glTranslate y for effect
+static int track_translate_z; // glTranslate z for effect
+static int track_scale_xyz;	  // glScale x,y,z for effect
 
 
 static KochFlake flake;
@@ -71,6 +75,10 @@ static void init_rocket_tracks(void)
 	set_BPM(144.0f);
 	set_RPB(4.0f);
 	track_scene = add_to_rocket("scene");
+	track_translate_x = add_to_rocket("translate_x");
+	track_translate_y = add_to_rocket("translate_y");
+	track_translate_z = add_to_rocket("translate_z");
+	track_scale_xyz = add_to_rocket("scale_xyz");
 }
 
 
@@ -97,9 +105,11 @@ void ctoy_begin(void)
 
 	gradient_mesh = GradientMesh_Create(&rainbow_gradient, gl_tex_name, GradientVertical);
 
-	float2 gstart = {10.0f, 10.0f};
-	float2 gdir = {0.5f, 0.5f};
-	gosper_list = Gosper_Create(gstart, gdir, 5.0f, 2);
+	float2 gstart = {00.0f, 00.0f};
+	float2 gdir = {0.0f, 1.0f};
+	float gosper_lenght = 5.0f;
+	short gosper_recursion = 2;
+	gosper_list = Gosper_Create(gstart, gdir, gosper_lenght, gosper_recursion);
 
 	init_rocket_tracks();
 }
@@ -185,9 +195,9 @@ void fx_ears()
 
 void fx_gradient_bunny()
 {
-	short x = 0;
-	short y = 0;
-	float scale = 100.0f;
+	short x = get_from_rocket(track_translate_x);
+	short y = get_from_rocket(track_translate_y);
+	float scale = get_from_rocket(track_scale_xyz);
 	start_frame_2D();
 	glPushMatrix();
 
@@ -201,9 +211,9 @@ void fx_gradient_bunny()
 
 void fx_gosper_curve()
 {
-	short x = 0;
-	short y = 0;
-	float scale = 100.0f;
+	short x = get_from_rocket(track_translate_x);
+	short y = get_from_rocket(track_translate_y);
+	float scale = get_from_rocket(track_scale_xyz);
 	start_frame_2D();
 	glPushMatrix();
 

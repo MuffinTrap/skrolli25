@@ -1,0 +1,6 @@
+
+Notes: CToy wants wav without any metadata.
+To remove metadata from a wav use:
+
+ffmpeg -i sourcefiles/input.wav -map_metadata -1 -c copy -fflags +bitexact -flags:v +bitexact -flags:a +bitexact sourcefiles/song.wav
+
