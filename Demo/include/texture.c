@@ -3,7 +3,6 @@
  * @brief Texture management system for Ziz/N64/Gecko/OpenGL applications
  */
 
-#pragma once
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

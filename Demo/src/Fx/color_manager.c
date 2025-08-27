@@ -1,4 +1,5 @@
 #include "color_manager.h"
+#include <stdlib.h>
 
 #define RED(c)		(((c)>>24)&0xFF)	/*!< Gets the red component intensity from a 32-bit color value.
 										 *	 \param[in] c 32-bit RGBA color value

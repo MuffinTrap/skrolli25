@@ -3,22 +3,8 @@
 
 #include "koch_flake.h"
 #include <math.h>
-
-// float2 functions
-/**
- * @brief Rotate a 2D vector around origo
- */
-float2 rotate_z(float2 vector, float radians)
-{
-    float c = cos(radians);
-    float s = sin(radians);
-    float x = vector.x * c - vector.y * s;
-    float y = vector.x * s + vector.y * c;
-    float2 rotated;
-    rotated.x = x;
-    rotated.y = y;
-    return rotated;
-}
+#include <m_float2_math.h>
+#include <opengl_include.h>
 
 /**
  * @brief Rotate a 2D vector around another point
@@ -26,7 +12,7 @@ float2 rotate_z(float2 vector, float radians)
 static float2 rotate_z_point(float2 vector, float radians, float2 point)
 {
     float2 temp = {vector.x-point.x, vector.y - point.y};
-    temp = rotate_z(temp, radians);
+    temp = M_ROTATE2(temp, radians);
     float2 rotated = {temp.x + point.x, temp.y + point.y};
     return rotated;
 }
@@ -38,8 +24,6 @@ static float2 direction_2d(float2 A, float2 B)
     M_NORMALIZE2(dir, dir);
     return dir;
 }
-
-#define M_SCALE2(dest, A, scalar) {(dest).x = (A).x * scalar; (dest).y = (A).y * scalar;}
 
 static float2 lerp_normalized(float2 A, float2 B, float t)
 {
@@ -119,7 +103,7 @@ PointList* get_corners(float2 center, short amount, float radius, float angle, P
     float2 rotated = {0,0};
     for (short i = 0; i < amount; i++)
     {
-        rotated = rotate_z(start, current_angle);
+        rotated = M_ROTATE2(start, current_angle);
         M_ADD2(point, rotated, center);
         PointList_set_point(list, point, i);
         current_angle -= step;

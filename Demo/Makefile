@@ -17,7 +17,7 @@ include $(DEVKITPPC)/wii_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	skrolli
 BUILD		:=	build
-SOURCES		:=	include src GRRLIB GRRLIB/fonts libpng libpng/pngu
+SOURCES		:=	include rocket src src/Ziz src/Fx GRRLIB GRRLIB/fonts libpng libpng/pngu
 DATA		:=	data  
 INCLUDES	:=
 
@@ -30,7 +30,7 @@ ZIZ_RESOURCES_INCLUDE = $(ZIZ_DIR)/ressources/include
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS	= -g -O3 -mrvl -Wall $(MACHDEP) $(INCLUDE)
+CFLAGS	= -g -O3 -mrvl -Wall $(MACHDEP) $(INCLUDE) -DSYNC_PLAYER
 CXXFLAGS	=	$(CFLAGS)
 
 LDFLAGS	=	-g $(MACHDEP) -mrvl -Wl,-Map,$(notdir $@).map

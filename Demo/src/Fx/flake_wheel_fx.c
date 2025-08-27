@@ -1,7 +1,10 @@
 #ifndef FLAKE_WHEEL_FX_C
 #define FLAKE_WHEEL_FX_C
 
+#include <math.h>
 #include "koch_flake.h"
+#include <opengl_include.h>
+#include "../Ziz/screenprint.h"
 
 void flake_wheel_fx(float2 center, float shape_radius, float pattern_radius,
                     float shape_rotation_deg, float pattern_rotation_deg,

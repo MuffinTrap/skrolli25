@@ -1,6 +1,8 @@
 #ifndef PIXEL_FONT_H
 #define PIXEL_FONT_H
 
+#include <opengl_include.h>
+
 /**
  * @brief Simple pixelfont
  */

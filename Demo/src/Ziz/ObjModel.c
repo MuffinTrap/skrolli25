@@ -62,6 +62,7 @@ int load_gltf(const char* path, const char* name) {
         fprintf(stderr, "Failed to parse %s : error code %d\n", path, result);
         switch(result)
         {
+            case cgltf_result_success: /* NOP */ break;
             case cgltf_result_data_too_short: printf("data too short\n"); break;
             case cgltf_result_unknown_format: printf("unknown format\n"); break;
             case cgltf_result_invalid_json: printf("invalid json\n"); break;
@@ -105,23 +106,24 @@ int load_gltf(const char* path, const char* name) {
 
 struct Mesh load_to_mesh(int model_index)
 {
-    if (model_index < 0 || model_index >= model_count) {
-        fprintf(stderr, "Invalid model index: %d\n", model_index);
-        return;
-    }
-
-    cgltf_data* data = models[model_index].data;
-    if (!data) {
-        fprintf(stderr, "Model %d has null data\n", model_index);
-        return;
-    }
-
-    // Create Mesh struct
     struct Mesh ziz_mesh;
     ziz_mesh.positions = NULL;
     ziz_mesh.normals = NULL;
     ziz_mesh.texcoords = NULL;
     ziz_mesh.indices = NULL;
+
+    if (model_index < 0 || model_index >= model_count) {
+        fprintf(stderr, "Invalid model index: %d\n", model_index);
+        return ziz_mesh;
+    }
+
+    cgltf_data* data = models[model_index].data;
+    if (!data) {
+        fprintf(stderr, "Model %d has null data\n", model_index);
+        return ziz_mesh;
+    }
+
+    // Create Mesh struct
 
     if (data->meshes_count > 1)
     {
@@ -151,7 +153,7 @@ struct Mesh load_to_mesh(int model_index)
                 }
 
                 // read data amount for allocation
-                cgltf_size floats_in_component = cgltf_num_components(accessor);
+                cgltf_size floats_in_component = cgltf_num_components(attr->type);
                 cgltf_size item_count = cgltf_accessor_unpack_floats(accessor, NULL, floats_in_component);
 
                 const float* data = (const float*)((const uint8_t*)accessor->buffer_view->buffer->data +
@@ -186,17 +188,19 @@ struct Mesh load_to_mesh(int model_index)
                 if (!accessor->buffer_view || !accessor->buffer_view->buffer) {
                     continue;
                 }
-                cgltf_size floats_in_component = cgltf_num_components(accessor);
-                cgltf_size item_count = cgltf_accessor_unpack_indices(accessor, NULL, floats_in_component, accessor->count);
 
                 GLenum type = GL_UNSIGNED_SHORT;
                 if (accessor->component_type == cgltf_component_type_r_32u) {
                     type = GL_UNSIGNED_INT;
+                    cgltf_size bytes_in_index = 4;
+                    cgltf_size item_count = cgltf_accessor_unpack_indices(accessor, NULL, bytes_in_index, accessor->count);
                     ziz_mesh.indices = (unsigned short*)malloc(sizeof(unsigned int) * item_count);
                     printf("ERROR Bunny has Unsigned Int indices");
                 }
                 else
                 {
+                    cgltf_size bytes_in_index = 2;
+                    cgltf_size item_count = cgltf_accessor_unpack_indices(accessor, NULL, bytes_in_index, accessor->count);
                     ziz_mesh.indices = (unsigned short*)malloc(sizeof(unsigned short) * item_count);
                 }
 

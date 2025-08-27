@@ -8,8 +8,11 @@
 #include <ctoy.h>
 #include <display.h>
 #include <opengl_include.h>
+#include <texture.h>
 
+#include "Ziz/screenprint.h"
 #include "Ziz/ObjModel.h"
+
 #include "Fx/pointlist.h"
 #include "Fx/koch_flake.h"
 #include "Fx/rotation_fx.h"
@@ -19,14 +22,21 @@
 #include "Fx/gradient.h"
 #include "Fx/gradient_mesh.h"
 #include "Fx/gosper_curve.h"
+//#include "../rocket/rocket_ctoy.h"
 
 
 // Code
+#ifdef GEKKO
+	// Wii special things here
+#else
+// NOTE gcc compiles texture.c separately and includes stb_image.h twice
 #include "../include/texture.c"
+#include "../include/m_float2_math.c"
 
 #include "Ziz/ObjModel.c"
 #include "Ziz/pixel_font.c"
 #include "Ziz/screenprint.c"
+#include "Fx/pointlist.c"
 #include "Fx/koch_flake.c"
 #include "Fx/rotation_fx.c"
 #include "Fx/flake_wheel_fx.c"
@@ -35,6 +45,11 @@
 #include "Fx/gradient.c"
 #include "Fx/gradient_mesh.c"
 #include "Fx/gosper_curve.c"
+#endif
+
+// Rocket tracks
+static int track_scene;
+
 
 static KochFlake flake;
 static PointList rotation_outer;
@@ -50,6 +65,13 @@ static struct Gradient rainbow_gradient;
 static PointList gosper_list;
 static float gosper_length = 0.0f;
 static float gosper_speed = 0.0f;
+
+static void init_rocket_tracks(void)
+{
+	set_BPM(144.0f);
+	set_RPB(4.0f);
+	track_scene = add_to_rocket("scene");
+}
 
 
 void ctoy_begin(void)
@@ -78,6 +100,8 @@ void ctoy_begin(void)
 	float2 gstart = {10.0f, 10.0f};
 	float2 gdir = {0.5f, 0.5f};
 	gosper_list = Gosper_Create(gstart, gdir, 5.0f, 2);
+
+	init_rocket_tracks();
 }
 
 void ctoy_end(void)
@@ -159,12 +183,15 @@ void fx_ears()
 
 }
 
-void fx_gradient_bunny(short x, short y, float scale)
+void fx_gradient_bunny()
 {
+	short x = 0;
+	short y = 0;
+	float scale = 100.0f;
 	start_frame_2D();
 	glPushMatrix();
 
-		glTranslatef(x, y, 0.0f);
+		glTranslatef(ctoy_frame_buffer_width()/2+x, ctoy_frame_buffer_height()/2+y, 0.0f);
 		glScalef(scale, scale, 1.0f);
 
 		GradientMesh_Draw(&gradient_mesh);
@@ -172,19 +199,23 @@ void fx_gradient_bunny(short x, short y, float scale)
 
 }
 
-void fx_gosper_curve(short x, short y, float scale)
+void fx_gosper_curve()
 {
+	short x = 0;
+	short y = 0;
+	float scale = 100.0f;
 	start_frame_2D();
 	glPushMatrix();
 
-		glTranslatef(x, y, 0.0f);
+		glTranslatef(ctoy_frame_buffer_width()/2+x, ctoy_frame_buffer_height()/2+y, 0.0f);
 		glScalef(scale, scale, 1.0f);
 		glColor3f(1.0f, 1.0f, 1.0f);
 
 		Gosper_Draw(&gosper_list, gosper_length);
 	glPopMatrix();
-	gosper_length += gosper_speed;
 
+	gosper_speed = 0.1f;
+	gosper_length += gosper_speed;
 }
 
 void fx_stanford_bunny()
@@ -263,9 +294,28 @@ void ctoy_main_loop(void)
 	screenprint_start_frame();
 	screenprint_set_scale(2.0f);
 
-	//fx_gradient_bunny(120, 20, 450.0f);
-	gosper_speed = 0.1f;
-	fx_gosper_curve(120, 220, 5.0f);
+	float scene_number = get_from_rocket(track_scene);
+	screenprintf("Active scene %.0f", scene_number);
+	const int scene = scene_number;
+	switch(scene)
+	{
+		case 0:
+			fx_gradient_bunny();
+			break;
+		case 1:
+			fx_gosper_curve();
+			break;
+		case 2:
+			fx_single_flake();
+			break;
+		case 3:
+			fx_flake_wheel();
+			break;
+		case 4:
+			fx_stanford_bunny();
+			break;
+	}
+
 
 	screenprintf("I am all ears");
 	screenprint_draw_prints();

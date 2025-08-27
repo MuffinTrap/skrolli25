@@ -1,7 +1,10 @@
 #ifndef ROTATION_FX_C
 #define ROTATION_FX_C
 
+#include <opengl_include.h>
 #include "rotation_fx.h"
+#include "../Ziz/screenprint.h"
+#include "koch_flake.h"
 //static float progression1 = 0.0f;
 //static float progression2 = 0.0f;
 

@@ -3,19 +3,9 @@
 
 #include <m_math.h>
 
-float2 M_ROTATE2(float2 v, float radians) {
-	float xt = v.x*cos(radians) - v.y*sin(radians);
-	float yt = v.x*sin(radians) + v.y*cos(radians);
-    float2 rotated = {xt, yt};
-	return rotated;
-}
+float2 M_ROTATE2(float2 v, float radians);
 
-void M_ROTATE2_PTR(float2* v, float radians) {
-	float xt = v->x*cos(radians) - v->y*sin(radians);
-	float yt = v->x*sin(radians) + v->y*cos(radians);
-	v->x = xt;
-    v->y = yt;
-}
+void M_ROTATE2_PTR(float2* v, float radians);
 
 #define M_SCALE2(dest, A, scalar) { (dest).x = (A).x * scalar; (dest).y = (A).y * scalar;}
 

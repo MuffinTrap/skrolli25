@@ -1,10 +1,13 @@
 #include "gosper_curve.h"
 #include <m_float2_math.h>
+#include <stdio.h>
+#include <opengl_include.h>
+#include "../Ziz/screenprint.h"
 
 static float2 latest;
 static float2 direction;
 static float step;
-static const radians = 60.0f * M_DEG_TO_RAD;
+static const float radians = 60.0f * M_DEG_TO_RAD;
 
 static void Gosper_Turn(float sign)
 {
