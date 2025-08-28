@@ -318,7 +318,7 @@ void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* grad
           case GradientRadial: DrawRadialGradient(gradient, 0.0f, gradient_size, false, gradient_offset, gradient_repeat); break;
           case GradientCircle: DrawCircleGradient(gradient, gradient_size, gradient_offset, gradient_repeat ); break;
         }
-        //GradientTexture_DrawTexture(texture, texture_size);
+        GradientTexture_DrawTexture(texture, texture_size);
 
       }
       break;

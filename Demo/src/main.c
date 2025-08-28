@@ -230,6 +230,19 @@ void fx_gradient_bunny()
 	// TODO choose gradient
 	struct Gradient* grad = &rainbow_gradient;
 
+	// TODO choose texture
+	struct GradientTexture* text = &lost_bunny_texture;
+
+	switch((int)get_from_rocket(track_gradient_mode))
+	{
+		case GradientMultiply:
+			text->alphamode = GradientMultiply;
+			break;
+		case GradientCutout:
+			text->alphamode = GradientCutout;
+			break;
+	}
+
 	switch((int)get_from_rocket(track_gradient_shape))
 	{
 		case GradientVertical:

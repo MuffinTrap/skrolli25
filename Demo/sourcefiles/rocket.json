@@ -12,6 +12,6 @@
   {"name":"gradient_offset", "keys":[{"row":0,"value":0.000000,"type":1},{"row":23,"value":1.000000,"type":0},{"row":24,"value":0.000000,"type":1},{"row":47,"value":1.000000,"type":0},{"row":48,"value":0.000000,"type":1},{"row":64,"value":1.000000,"type":0}]},
   {"name":"gradient_repeat", "keys":[{"row":0,"value":1.000000,"type":1},{"row":23,"value":3.000000,"type":0},{"row":24,"value":1.000000,"type":1},{"row":47,"value":3.000000,"type":0},{"row":48,"value":1.000000,"type":1},{"row":64,"value":3.000000,"type":0}]},
   {"name":"gradient_index", "keys":[{"row":0,"value":0.000000,"type":0}]},
-  {"name":"bunny_index", "keys":[{"row":0,"value":0.000000,"type":0}]},
-  {"name":"gradient_size", "keys":[{"row":0,"value":0.000000,"type":0},{"row":24,"value":209.000000,"type":0}]}
+  {"name":"gradient_size", "keys":[{"row":0,"value":0.000000,"type":0},{"row":24,"value":209.000000,"type":0}]},
+  {"name":"bunny_index", "keys":[{"row":0,"value":0.000000,"type":0}]}
 ]}
