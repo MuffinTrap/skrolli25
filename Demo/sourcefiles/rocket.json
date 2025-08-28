@@ -1,7 +1,7 @@
 {"tracks":[
   {"name":"scene", "keys":[{"row":0,"value":0.000000,"type":0}]},
-  {"name":"translate_x", "keys":[{"row":0,"value":330.000000,"type":1},{"row":23,"value":-50.000000,"type":0}]},
+  {"name":"translate_x", "keys":[{"row":0,"value":0.000000,"type":1},{"row":23,"value":-50.000000,"type":0}]},
   {"name":"translate_y", "keys":[{"row":0,"value":0.000000,"type":0}]},
   {"name":"translate_z", "keys":[{"row":0,"value":0.000000,"type":0}]},
-  {"name":"scale_xyz", "keys":[{"row":0,"value":100.000000,"type":0},{"row":23,"value":100.000000,"type":2},{"row":39,"value":240.000000,"type":0}]}
+  {"name":"scale_xyz", "keys":[{"row":0,"value":230.000000,"type":0},{"row":23,"value":100.000000,"type":2},{"row":39,"value":240.000000,"type":0}]}
 ]}

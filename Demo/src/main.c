@@ -20,7 +20,7 @@
 #include "Fx/bunny_fx.h"
 #include "Fx/color_manager.h"
 #include "Fx/gradient.h"
-#include "Fx/gradient_mesh.h"
+#include "Fx/gradient_texture.h"
 #include "Fx/gosper_curve.h"
 //#include "../rocket/rocket_ctoy.h"
 
@@ -43,7 +43,7 @@
 #include "Fx/bunny_fx.c"
 #include "Fx/color_manager.c"
 #include "Fx/gradient.c"
-#include "Fx/gradient_mesh.c"
+#include "Fx/gradient_texture.c"
 #include "Fx/gosper_curve.c"
 #endif
 
@@ -55,6 +55,7 @@ static int track_translate_z; // glTranslate z for effect
 static int track_scale_xyz;	  // glScale x,y,z for effect
 
 
+// Koch flakes
 static KochFlake flake;
 static PointList rotation_outer;
 
@@ -62,7 +63,7 @@ static PointList rotation_outer;
 static struct Bunny bunny_mesh;
 
 // Bunny gradient
-static struct GradientMesh gradient_mesh;
+static struct GradientTexture lost_bunny_texture;
 static struct Gradient rainbow_gradient;
 
 // Gosper curve fx
@@ -95,7 +96,7 @@ void ctoy_begin(void)
 	bunny_mesh = Bunny_Load("assets/bunny_medium.glb");
 
 	ColorManager_LoadColors();
-	rainbow_gradient = Gradient_CreateEmpty();
+	rainbow_gradient = Gradient_CreateEmpty(GradientVertical);
 	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorRose), 0.0f);
 	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorPurple), 0.5f);
 	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorCyanblue), 1.0f);
@@ -103,7 +104,7 @@ void ctoy_begin(void)
 	int bunny_texture_id = addTexture("assets/lost_bun.png");
     GLuint gl_tex_name = bind_texture(bunny_texture_id);
 
-	gradient_mesh = GradientMesh_Create(&rainbow_gradient, gl_tex_name, GradientVertical);
+	lost_bunny_texture = GradientTexture_Create(gl_tex_name, bunny_texture_id, GradientCutout);
 
 	float2 gstart = {00.0f, 00.0f};
 	float2 gdir = {0.0f, 1.0f};
@@ -121,7 +122,7 @@ void ctoy_end(void)
 
 void clear_screen( void )
 {
-	glClearColor(0.3f, 0.2f, 0.4f, 1.0f);
+	glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 	glViewport(0, 0, ctoy_frame_buffer_width(), ctoy_frame_buffer_height());
 #ifdef GEKKO
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -202,9 +203,9 @@ void fx_gradient_bunny()
 	glPushMatrix();
 
 		glTranslatef(ctoy_frame_buffer_width()/2+x, ctoy_frame_buffer_height()/2+y, 0.0f);
-		glScalef(scale, scale, 1.0f);
+		glScalef(1.0f, 1.0f, 1.0f);
 
-		GradientMesh_Draw(&gradient_mesh);
+		GradientTexture_Draw(&lost_bunny_texture, &rainbow_gradient, scale, scale);
 	glPopMatrix();
 
 }

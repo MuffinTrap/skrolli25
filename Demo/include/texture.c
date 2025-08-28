@@ -162,6 +162,16 @@ int addTexture(const char *filename) {
     return id;
 }
 
+int get_texture_width(int id)
+{
+    return sprites[id]->width;
+}
+
+int get_texture_height(int id)
+{
+    return sprites[id]->height;
+}
+
 /**
  * @brief Release OpenGL resources for a texture
  * @param id Texture ID to unload

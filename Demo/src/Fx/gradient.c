@@ -1,10 +1,11 @@
 #include "gradient.h"
 #include <opengl_include.h>
 
-struct Gradient Gradient_CreateEmpty(void)
+struct Gradient Gradient_CreateEmpty(enum GradientShape shape)
 {
     struct Gradient g;
     g.color_amount = 0;
+    g.shape = shape;
     return g;
 }
 
