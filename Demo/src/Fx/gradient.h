@@ -10,6 +10,12 @@ enum GradientShape
     GradientCircle
 };
 
+enum GradientLoopMode
+{
+    GradientLoopRepeat,
+    GradientLoopMirror
+};
+
 #define GRADIENT_SIZE 8
 struct Gradient
 {
@@ -17,12 +23,14 @@ struct Gradient
     float stops[GRADIENT_SIZE];
     short color_amount;
     enum GradientShape shape;
+    enum GradientLoopMode loop_mode;
 };
 
-struct Gradient Gradient_CreateEmpty(enum GradientShape shape);
+struct Gradient Gradient_CreateEmpty(enum GradientShape shape, enum GradientLoopMode loop_mode);
 void Gradient_PushColor(struct Gradient* gradient, color3* color, float stop);
 void Gradient_glColor(struct Gradient* gradient, float stop);
 void Gradient_glColorA(struct Gradient* gradient, float stop, float alpha);
+
 color3 Gradient_GetColor(struct Gradient* gradient, float stop);
 
 #endif

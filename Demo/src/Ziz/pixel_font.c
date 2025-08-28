@@ -601,7 +601,7 @@ short PixelFont_DrawText(PixelFont* font, short x, short y, float scale, const c
     glBindTexture(GL_TEXTURE_2D, font->textureName);
 
     glBegin(GL_QUADS);
-    glColor3f(0.7f, 0.7f, 0.7f);
+    glColor3f(0.9f, 0.9f, 0.1f);
     for(int characterIndex = 0; characterIndex < maxLength; characterIndex++)
     {
         char letter = buffer[characterIndex];

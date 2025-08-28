@@ -1,19 +1,25 @@
 #include "gradient_texture.h"
+#include "../Ziz/screenprint.h"
 #include <m_float2_math.h>
 #include <texture.h>
 
-static void DrawVerticalGradient(struct Gradient* gradient, float texture_size, bool uvs)
+static void DrawVerticalGradient(struct Gradient* gradient, float texture_size, bool uvs, float gradient_offset, float gradient_repeat)
 {
+  float smoothness = 10.0f;
+  //screenprintf("Gradient repeat %.2f", gradient_repeat);
   // When drawn in the background, fill whole screen
     static const float screenWidth = 640.0f;
+    static const float screenHeight = 480.0f;
     float dx = -screenWidth/2;
-    float dy = -screenWidth/2;
-    float size = screenWidth;
+    float dy = -screenHeight/2;
+    float size_x = screenWidth;
+    float size_y = screenHeight;
     if (uvs)
     {
       dx = -0.5f * texture_size;
       dy = -0.5f * texture_size;
-      size = 1.0f * texture_size;
+      size_x = 1.0f * texture_size;
+      size_y = 1.0f * texture_size;
     }
 
     float du = 0.0f;
@@ -22,47 +28,63 @@ static void DrawVerticalGradient(struct Gradient* gradient, float texture_size, 
     float ga = 1.0f;
 
     glBegin(GL_TRIANGLE_STRIP);
+    //glBegin(GL_LINE_LOOP);
 
+    float gradient_p = gradient_offset;
     // First 2 : left | right
-    Gradient_glColorA(gradient, 0.0f, ga);
+    //screenprintf("Gradient point %d: %.2f", 0, gradient_p);
+    Gradient_glColorA(gradient, gradient_p, ga);
     if (uvs) {glTexCoord2f(du, dv);}
     glVertex2f(dx, dy);
 
     if (uvs) {glTexCoord2f(du+1.0f, dv);}
-    glVertex2f(dx + size, dy);
+    glVertex2f(dx + size_x, dy);
 
 
     // TODO use the gradient stops instead of fixed step
-    float gradient_p = 0.0f;
-    float step = 1.0f / (float)(gradient->color_amount-1);
-    for (int i = 1; i < gradient->color_amount; i++)
+
+    int slices = gradient_repeat * (gradient->color_amount-1) * smoothness;
+    //screenprintf("Slices %d", slices);
+
+    float gradient_step = (1.0f / (float)(gradient->color_amount-1) / smoothness);
+    //screenprintf("Gradient step %.2f", gradient_step);
+
+    float y_step = size_y / ((float)slices);
+    float v_step = 1.0f / ((float)slices);
+    for (int i = 1; i < slices; i++)
     {
-        Gradient_glColorA(gradient, gradient_p + step, ga);
-        if (uvs)glTexCoord2f(du, dv - step);
-        glVertex2f(dx, dy + size * step);
+        Gradient_glColorA(gradient, gradient_p + gradient_step, ga);
+        if (uvs)glTexCoord2f(du, dv - v_step);
+        glVertex2f(dx, dy + y_step);
 
-        if (uvs)glTexCoord2f(du + 1.0f, dv - step);
-        glVertex2f(dx + size, dy + step * size);
+        if (uvs)glTexCoord2f(du + 1.0f, dv - v_step);
+        glVertex2f(dx + size_x, dy + y_step);
 
-        dy += step * size;
-        dv -= step;
-        gradient_p += step;
+        dy += y_step;
+        dv -= v_step;
+        gradient_p += gradient_step;
+     //   screenprintf("Gradient point %d: %.2f", i, gradient_p);
     }
 
+    dy += y_step;
+    dv -= v_step;
+    gradient_p += gradient_step;
+
     // Last 2 : if only 2 colors in gradient, loop is skipped
-    Gradient_glColorA(gradient, 1.0f, ga);
+    //screenprintf("Gradient point %d: %.2f", slices, gradient_p);
+    Gradient_glColorA(gradient, gradient_p, ga);
     if(uvs)glTexCoord2f(du, dv);
     glVertex2f(dx, dy);
 
     if(uvs)glTexCoord2f(du + 1.0f, dv);
-    glVertex2f(dx + size, dy);
+    glVertex2f(dx + size_x, dy);
 
     glEnd();
 }
 
-static void DrawRadialGradient(struct Gradient* gradient, float texture_size, bool uvs)
+static void DrawRadialGradient(struct Gradient* gradient, float texture_size, float gradient_size, bool uvs, float gradient_offset, float gradient_repeat)
 {
-  float2 point = {240.0f, 0.0f};
+  float2 point = {gradient_size, 0.0f};
   float2 uvpoint = {1.0f, 0.0f};
   float2 rotated;
   float uv_inset;
@@ -71,13 +93,14 @@ static void DrawRadialGradient(struct Gradient* gradient, float texture_size, bo
     point.x = texture_size;
   }
   short colors = gradient->color_amount;
-  float gradient_angle = 0.0f;
-  float gradient_angle_step = 1.0f / (float)colors;
-  float rotation_step = M_TAU / (float)colors;
+  short corners = colors * gradient_repeat;
+  float gradient_angle = gradient_offset * M_TAU;
+  float gradient_angle_step = 1.0f / ((float)colors);
+  float rotation_step = M_TAU / (float)corners;
   float rotation_rad = 0.0f;
   glBegin(GL_QUADS);
 
-  for (short i = 0; i <= colors; i++)
+  for (short i = 0; i <= corners; i++)
   {
     // loop around for last segment
 
@@ -135,18 +158,20 @@ static void DrawRadialGradient(struct Gradient* gradient, float texture_size, bo
 
 }
 
-static void DrawCircleGradient(struct Gradient* gradient, float gradient_size)
+static void DrawCircleGradient(struct Gradient* gradient, float gradient_size, float gradient_offset, float gradient_repeat)
 {
+  float smoothness = 10.0f;
   float points = 32.0f;
   float2 direction = {1.0f, 0.0f};
   float2 rotated_dir_left;
   float2 rotated_dir_right;
   short colors = gradient->color_amount;
-  float gradient_point = 0.0f;
-  float gradient_step = 1.0f / (float)colors;
+  float gradient_point = gradient_offset;
+  float gradient_step = 1.0f / ((float)colors*smoothness);
   float rotation_step = M_TAU / points;
   float rotation_rad = 0.0f;
-  float ring_radius = gradient_size / (float)colors;
+  short rings = colors * gradient_repeat * smoothness;
+  float ring_radius = gradient_size / rings;
   glBegin(GL_QUADS);
 
   for (short i = 0; i < points; i++)
@@ -164,8 +189,8 @@ static void DrawCircleGradient(struct Gradient* gradient, float gradient_size)
     }
     rotated_dir_right = M_ROTATE2(direction, next_rad);
 
-    gradient_point = 0.0f;
-    for (short ring = 0; ring < colors; ring++)
+    gradient_point = gradient_offset;
+    for (short ring = 0; ring < rings; ring++)
     {
       // inner right
       Gradient_glColor(gradient, gradient_point);
@@ -252,7 +277,7 @@ void GradientTexture_DrawTexture(struct GradientTexture* texture, float scale)
     }
 }
 
-void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* gradient, float texture_size, float gradient_size)
+void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* gradient, float texture_size, float gradient_size, float gradient_offset, float gradient_repeat)
 {
     // TODO Draw the image first
     // and draw the gradient on top
@@ -280,7 +305,7 @@ void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* grad
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, texture->gl_texture_name);
 
-        DrawVerticalGradient(gradient, texture_size, true); break;
+        DrawVerticalGradient(gradient, texture_size, true, gradient_offset, gradient_repeat); break;
         glDisable(GL_TEXTURE_2D);
         glDisable(GL_BLEND);
       }
@@ -289,11 +314,11 @@ void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* grad
       {
         switch(gradient->shape)
         {
-          case GradientVertical: DrawVerticalGradient(gradient, gradient_size, false); break;
-          case GradientRadial: DrawRadialGradient(gradient, gradient_size, false); break;
-          case GradientCircle: DrawCircleGradient(gradient, gradient_size ); break;
+          case GradientVertical: DrawVerticalGradient(gradient, gradient_size, false, gradient_offset, gradient_repeat); break;
+          case GradientRadial: DrawRadialGradient(gradient, 0.0f, gradient_size, false, gradient_offset, gradient_repeat); break;
+          case GradientCircle: DrawCircleGradient(gradient, gradient_size, gradient_offset, gradient_repeat ); break;
         }
-        GradientTexture_DrawTexture(texture, texture_size);
+        //GradientTexture_DrawTexture(texture, texture_size);
 
       }
       break;

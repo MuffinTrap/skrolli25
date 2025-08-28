@@ -48,11 +48,25 @@
 #endif
 
 // Rocket tracks
+
+// Common
 static int track_scene;	// Currently active scene
 static int track_translate_x; // glTranslate x for effect
 static int track_translate_y; // glTranslate y for effect
 static int track_translate_z; // glTranslate z for effect
 static int track_scale_xyz;	  // glScale x,y,z for effect
+static int track_rotation_x;	  // glRotate x,y,z for effect
+static int track_rotation_y;	  // glRotate x,y,z for effect
+static int track_rotation_z;	  // glRotate x,y,z for effect
+
+// Fx track
+static int track_gradient_mode;
+static int track_gradient_shape;
+static int track_gradient_offset;
+static int track_gradient_repeat;
+static int track_gradient_index;
+static int track_gradient_size;
+static int track_bunny_index;
 
 
 // Koch flakes
@@ -80,6 +94,17 @@ static void init_rocket_tracks(void)
 	track_translate_y = add_to_rocket("translate_y");
 	track_translate_z = add_to_rocket("translate_z");
 	track_scale_xyz = add_to_rocket("scale_xyz");
+	track_rotation_x = add_to_rocket("rotation_x");
+	track_rotation_y = add_to_rocket("rotation_y");
+	track_rotation_z = add_to_rocket("rotation_z");
+
+	track_gradient_mode = add_to_rocket("gradient_mode");
+	track_gradient_shape = add_to_rocket("gradient_shape");
+	track_gradient_offset = add_to_rocket("gradient_offset");
+	track_gradient_repeat = add_to_rocket("gradient_repeat");
+	track_gradient_index = add_to_rocket("gradient_index");
+	track_gradient_size = add_to_rocket("gradient_size");
+	track_bunny_index = add_to_rocket("bunny_index");
 }
 
 
@@ -96,7 +121,7 @@ void ctoy_begin(void)
 	bunny_mesh = Bunny_Load("assets/bunny_medium.glb");
 
 	ColorManager_LoadColors();
-	rainbow_gradient = Gradient_CreateEmpty(GradientVertical);
+	rainbow_gradient = Gradient_CreateEmpty(GradientCircle, GradientLoopRepeat);
 	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorRose), 0.0f);
 	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorPurple), 0.5f);
 	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorCyanblue), 1.0f);
@@ -199,13 +224,32 @@ void fx_gradient_bunny()
 	short x = get_from_rocket(track_translate_x);
 	short y = get_from_rocket(track_translate_y);
 	float scale = get_from_rocket(track_scale_xyz);
+	float offset = get_from_rocket(track_gradient_offset);
+	float repeat = get_from_rocket(track_gradient_repeat);
+	float gradient_size = get_from_rocket(track_gradient_size);
+	// TODO choose gradient
+	struct Gradient* grad = &rainbow_gradient;
+
+	switch((int)get_from_rocket(track_gradient_shape))
+	{
+		case GradientVertical:
+			grad->shape = GradientVertical;
+			break;
+		case GradientRadial:
+			grad->shape = GradientRadial;
+			break;
+		case GradientCircle:
+			grad->shape = GradientCircle;
+			break;
+	}
+
 	start_frame_2D();
 	glPushMatrix();
 
 		glTranslatef(ctoy_frame_buffer_width()/2+x, ctoy_frame_buffer_height()/2+y, 0.0f);
 		glScalef(1.0f, 1.0f, 1.0f);
 
-		GradientTexture_Draw(&lost_bunny_texture, &rainbow_gradient, scale, scale);
+		GradientTexture_Draw(&lost_bunny_texture, &rainbow_gradient, scale, gradient_size, offset, repeat);
 	glPopMatrix();
 
 }

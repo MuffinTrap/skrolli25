@@ -26,7 +26,7 @@ struct GradientTexture GradientTexture_Create(GLuint gl_texture_name, int ziz_te
 /**
  * @brief Draws both the texture and gradient. Uses the given AlphaMode
  */
-void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* gradient, float texture_size, float gradient_size);
+void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* gradient, float texture_size, float gradient_size, float gradient_offset, float gradient_repeat);
 
 /**
  * @brief Draws only the texture using alphamode

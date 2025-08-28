@@ -1,7 +1,17 @@
 {"tracks":[
   {"name":"scene", "keys":[{"row":0,"value":0.000000,"type":0}]},
-  {"name":"translate_x", "keys":[{"row":0,"value":0.000000,"type":1},{"row":23,"value":-50.000000,"type":0}]},
+  {"name":"translate_x", "keys":[{"row":0,"value":0.000000,"type":1}]},
   {"name":"translate_y", "keys":[{"row":0,"value":0.000000,"type":0}]},
   {"name":"translate_z", "keys":[{"row":0,"value":0.000000,"type":0}]},
-  {"name":"scale_xyz", "keys":[{"row":0,"value":230.000000,"type":0},{"row":23,"value":100.000000,"type":2},{"row":39,"value":240.000000,"type":0}]}
+  {"name":"scale_xyz", "keys":[{"row":0,"value":240.000000,"type":0},{"row":39,"value":240.000000,"type":0}]},
+  {"name":"rotation_x", "keys":[{"row":0,"value":0.000000,"type":0}]},
+  {"name":"rotation_y", "keys":[{"row":0,"value":0.000000,"type":0}]},
+  {"name":"rotation_z", "keys":[{"row":0,"value":0.000000,"type":0}]},
+  {"name":"gradient_mode", "keys":[{"row":0,"value":0.000000,"type":0}]},
+  {"name":"gradient_shape", "keys":[{"row":0,"value":0.000000,"type":0},{"row":24,"value":1.000000,"type":0},{"row":48,"value":2.000000,"type":0}]},
+  {"name":"gradient_offset", "keys":[{"row":0,"value":0.000000,"type":1},{"row":23,"value":1.000000,"type":0},{"row":24,"value":0.000000,"type":1},{"row":47,"value":1.000000,"type":0},{"row":48,"value":0.000000,"type":1},{"row":64,"value":1.000000,"type":0}]},
+  {"name":"gradient_repeat", "keys":[{"row":0,"value":1.000000,"type":1},{"row":23,"value":3.000000,"type":0},{"row":24,"value":1.000000,"type":1},{"row":47,"value":3.000000,"type":0},{"row":48,"value":1.000000,"type":1},{"row":64,"value":3.000000,"type":0}]},
+  {"name":"gradient_index", "keys":[{"row":0,"value":0.000000,"type":0}]},
+  {"name":"bunny_index", "keys":[{"row":0,"value":0.000000,"type":0}]},
+  {"name":"gradient_size", "keys":[{"row":0,"value":0.000000,"type":0},{"row":24,"value":209.000000,"type":0}]}
 ]}

@@ -1,11 +1,14 @@
 #include "gradient.h"
+
+#include "../Ziz/screenprint.h"
 #include <opengl_include.h>
 
-struct Gradient Gradient_CreateEmpty(enum GradientShape shape)
+struct Gradient Gradient_CreateEmpty(enum GradientShape shape, enum GradientLoopMode loop_mode)
 {
     struct Gradient g;
     g.color_amount = 0;
     g.shape = shape;
+    g.loop_mode = loop_mode;
     return g;
 }
 
@@ -40,10 +43,63 @@ color3 Gradient_GetColor(struct Gradient* gradient, float stop)
     // NOTE must have at least 2 colors for this to work
     short before_index = 0;
     short after_index = gradient->color_amount;
+    float read_stop = 0.0f;
+
+    if (stop > 1.0f)
+    {
+        // Going forward or backward?
+        const float modulostop = floor(stop);
+        const short modulo = ((short)modulostop) % 2;
+                                    // 2.15 - 2.0 == 0.15
+        const float decimal_part = (stop - floor(stop));
+        //screenprintf("Decimal %f, Modulo %d", decimal_part, modulo);
+        read_stop = decimal_part;
+        /*
+        if (gradient->loop_mode == GradientLoopRepeat)
+        {
+            // Change to 2.15 -> 0.15
+
+            // If reaching full repeat,
+            if (decimal_part < 0.0001f)
+            {
+                if (modulo == 0)
+                {
+                    read_stop = 0.0f;
+                }
+                else
+                {
+                    read_stop = 1.0f;
+                }
+            }
+            else
+            {
+                read_stop = decimal_part;
+            }
+        }
+        if (gradient->loop_mode == GradientLoopMirror)
+        {
+            if (modulo == 0)
+            {
+                // Change to 2.15 -> 0.15
+                read_stop = decimal_part;
+            }
+            else
+            {
+                // Change to 1.15 -> 0.85
+                read_stop = 1.0f - decimal_part;
+            }
+        }
+        */
+    }
+    else
+    {
+        read_stop = stop;
+    }
+    //screenprintf("Stop: %.4f, Read: %.4f", stop, read_stop);
 
     for (short i = 0; i < gradient->color_amount-1; i++)
     {
-        if (stop >= gradient->stops[i])
+        if (read_stop >= gradient->stops[i])
         {
             before_index = i;
             after_index = i+1;
@@ -57,7 +113,7 @@ color3 Gradient_GetColor(struct Gradient* gradient, float stop)
     color3* before = gradient->colors[before_index];
     color3* after = gradient->colors[after_index];
     float range = gradient->stops[after_index] - gradient->stops[before_index];
-    float into_next = (stop - gradient->stops[before_index]);
+    float into_next = (read_stop - gradient->stops[before_index]);
     float t = into_next/range;
 
     color3 between;
