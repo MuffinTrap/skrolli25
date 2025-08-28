@@ -7,7 +7,23 @@ struct Mesh
     float* normals;
     float* texcoords;
     unsigned short* indices;
+    int vertex_count;
+    int index_count;
+    int allocated_vertex_count;
 };
+
+enum VertexAttribute
+{
+    AttributePosition = 1,
+    AttributeNormal = 2,
+    AttributeTexcoord = 4
+};
+
+struct Mesh Mesh_CreateEmpty(void);
+
+void Mesh_Allocate(struct Mesh* mesh, int vertex_count, int attribute_bitfield);
+
+void Mesh_DrawArrays(struct Mesh* mesh);
 
 
 #endif

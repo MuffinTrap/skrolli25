@@ -8,7 +8,7 @@
 //static float progression1 = 0.0f;
 //static float progression2 = 0.0f;
 
-void rotation_fx(float2 center, float radius_scale, float speed, float progress_normalized, float3 color1, float3 color2, PointList* outerCenters, PointList* recursive_list, PointList* local_list)
+void rotation_fx(float2 center, float radius_scale, float speed, float progress_normalized, float3 color1, float3 color2, PointList* outerCenters, PointList* recursive_list)
 {
     progress_normalized = progress_normalized - floor(progress_normalized);
     short fx_recursion = 3;
@@ -32,7 +32,7 @@ void rotation_fx(float2 center, float radius_scale, float speed, float progress_
                 //screenprintf("ring center %.1f %.1f\n", ringcenter.x, ringcenter.y);
                 glTranslatef(center.x, center.y, 0.0f);
                 glRotatef(progression * move_amount * -1.0f, 0.0f, 0.0f, 1.0f);
-                draw_snowflake(zero2, size*1.5f, recursion+1, 60.0f, 1.0f/3.0f, 1.0f, recursive_list, local_list);
+                draw_snowflake(zero2, size*1.5f, recursion+1, 60.0f, 1.0f/3.0f, 1.0f, recursive_list);
         glPopMatrix();
 
         glColor3f(color2.x, color2.y, color2.z);
@@ -45,7 +45,7 @@ void rotation_fx(float2 center, float radius_scale, float speed, float progress_
                 glTranslatef(ringcenter.x, ringcenter.y, 0.0f);
                 glRotatef(progression * move_amount * -1.0f, 0.0f, 0.0f, 1.0f);
 
-                draw_snowflake(zero2, size/2.0f, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list, local_list);
+                draw_snowflake(zero2, size/2.0f, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list);
 
             glPopMatrix();
         }
@@ -69,14 +69,14 @@ void rotation_fx(float2 center, float radius_scale, float speed, float progress_
             draw_snowflake(zero2, size, recursion,
                         60.0f,
                         1.0f/3.0f, 1.0f,
-                        recursive_list, local_list);
+                        recursive_list);
             glPopMatrix();
 
             glPushMatrix();
             glTranslatef(center.x, center.y, 0.0f);
             glColor3f(color1.x, color1.y, color1.z);
             glRotatef(progression*move_amount, 0.0f, 0.0f, 1.0f);
-            draw_snowflake(zero2, inner_size, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list, local_list);
+            draw_snowflake(zero2, inner_size, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list);
         glPopMatrix();
     }
 }

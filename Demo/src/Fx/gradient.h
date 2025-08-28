@@ -22,6 +22,7 @@ struct Gradient
     color3* colors[GRADIENT_SIZE];
     float stops[GRADIENT_SIZE];
     short color_amount;
+    float alpha;
     enum GradientShape shape;
     enum GradientLoopMode loop_mode;
 };

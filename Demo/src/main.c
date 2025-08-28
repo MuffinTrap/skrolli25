@@ -33,6 +33,7 @@
 #include "../include/texture.c"
 #include "../include/m_float2_math.c"
 
+#include "Ziz/mesh.c"
 #include "Ziz/ObjModel.c"
 #include "Ziz/pixel_font.c"
 #include "Ziz/screenprint.c"
@@ -59,7 +60,7 @@ static int track_rotation_x;	  // glRotate x,y,z for effect
 static int track_rotation_y;	  // glRotate x,y,z for effect
 static int track_rotation_z;	  // glRotate x,y,z for effect
 
-// Fx track
+// Fx tracks
 static int track_gradient_mode;
 static int track_gradient_shape;
 static int track_gradient_offset;
@@ -68,10 +69,24 @@ static int track_gradient_index;
 static int track_gradient_size;
 static int track_bunny_index;
 
+// Flake drawing offsets
+static int track_flake_ratio_off;
+static int track_flake_angle_off;
+static int track_flake_extrusion_off;
+
+// Flake tunnel tracks
+static int track_tunnel_shapes;
+static int track_tunnel_scale_step;
+static int track_tunnel_rotation_step;
+static int track_tunnel_gradient_step;
+
 
 // Koch flakes
 static KochFlake flake;
 static PointList rotation_outer;
+static PointList wheel_list;
+static struct Mesh flake_mesh_recursion3;
+static struct Mesh flake_mesh_recursion4;
 
 // Bunny fx
 static struct Bunny bunny_mesh;
@@ -105,6 +120,16 @@ static void init_rocket_tracks(void)
 	track_gradient_index = add_to_rocket("gradient_index");
 	track_gradient_size = add_to_rocket("gradient_size");
 	track_bunny_index = add_to_rocket("bunny_index");
+
+	track_flake_ratio_off = add_to_rocket("flake_ratio_off");
+	track_flake_angle_off = add_to_rocket("flake_angle_off");
+	track_flake_extrusion_off = add_to_rocket("flake_extrusion_off");
+
+	// Flake tunnel tracks
+	track_tunnel_shapes = add_to_rocket("tunnel_shapes");
+	track_tunnel_scale_step = add_to_rocket("tunnel_scale_step");
+	track_tunnel_rotation_step = add_to_rocket("tunnel_rotation_step");
+	track_tunnel_gradient_step = add_to_rocket("tunnel_gradient_step");
 }
 
 
@@ -113,24 +138,31 @@ void ctoy_begin(void)
 	ctoy_window_title("Bnuy");
 	display_init(RESOLUTION_640x480, DEPTH_32_BPP, 2, GAMMA_NONE, FILTERS_DISABLED);
 
-
-	flake.recursive_list = PointList_create(3);
-	flake.local_list = PointList_create(3);
+	// Create flake meshes
 	rotation_outer = PointList_create(6);
+	wheel_list = PointList_create(6);
+	flake = KochFlake_CreateDefault(4);
+	KochFlake_WriteToMesh(&flake, &flake_mesh_recursion4);
+	flake.recursion_level = 3;
+	KochFlake_WriteToMesh(&flake, &flake_mesh_recursion3);
 
+	// Stanford bunny
 	bunny_mesh = Bunny_Load("assets/bunny_medium.glb");
 
+	// Colors and gradients
 	ColorManager_LoadColors();
 	rainbow_gradient = Gradient_CreateEmpty(GradientCircle, GradientLoopRepeat);
 	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorRose), 0.0f);
 	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorPurple), 0.5f);
 	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorCyanblue), 1.0f);
 
+	// Bunny pictures
 	int bunny_texture_id = addTexture("assets/lost_bun.png");
     GLuint gl_tex_name = bind_texture(bunny_texture_id);
 
 	lost_bunny_texture = GradientTexture_Create(gl_tex_name, bunny_texture_id, GradientCutout);
 
+	// Gosper curve
 	float2 gstart = {00.0f, 00.0f};
 	float2 gdir = {0.0f, 1.0f};
 	float gosper_lenght = 5.0f;
@@ -147,7 +179,7 @@ void ctoy_end(void)
 
 void clear_screen( void )
 {
-	glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glViewport(0, 0, ctoy_frame_buffer_width(), ctoy_frame_buffer_height());
 #ifdef GEKKO
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -181,6 +213,7 @@ void start_frame_2D( void )
     //glDisable(GL_LIGHTING);
     // glEnable(GL_BLEND);
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_DEPTH_TEST);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -313,29 +346,64 @@ void fx_rotation_illusion()
 	float scale = 3.0f;
 	float progress = ctoy_get_time()/5;
 	rotation_fx(center, scale, speed, progress, color1, color2,
-				&rotation_outer, &flake.recursive_list, &flake.local_list);
+				&rotation_outer, &flake.recursive_list);
 	glPopMatrix();
 }
 
-void fx_single_flake()
+void fx_flake_tunnel()
 {
+	start_frame_3D();
 
-	float3 c3 = {0.0f, 0.0f, -280.0f};
-	glTranslatef(c3.x, c3.y, c3.z);
-	glRotatef(ctoy_get_time()*60.0f, 0.3f, 1.0f, 0.0f);
+	flake.ratio = 1.0f/3.0f + get_from_rocket(track_flake_ratio_off) / 100.0f;
+	flake.extrusion = 1.0f + get_from_rocket(track_flake_extrusion_off) / 100.0f;
+	flake.angle = 60.0f + get_from_rocket(track_flake_angle_off);
+	flake.recursion_level = 4;
+	KochFlake_WriteToMesh(&flake, &flake_mesh_recursion4);
 
-	float2 center = {ctoy_frame_buffer_width()/2, ctoy_frame_buffer_height()/2};
+	glDisable(GL_DEPTH_TEST);
+	glTranslatef(
+		get_from_rocket(track_translate_x),
+		get_from_rocket(track_translate_y),
+		get_from_rocket(track_translate_z)
+	);
+	glRotatef(get_from_rocket(track_rotation_x), 1.0f, 0.0f, 0.0f);
+	glRotatef(get_from_rocket(track_rotation_y), 0.0f, 1.0f, 0.0f);
+	glRotatef(get_from_rocket(track_rotation_z), 0.0f, 0.0f, 1.0f);
+
+	float scale = get_from_rocket(track_scale_xyz);
+	glScalef(scale, scale, 1.0f);
+
+	float2 center = {0.0f, 0.0f};
+
 	glPushMatrix();
-	float2 pos = center;
-	flake.center = pos;
-	flake.radius = 160.0f;
-	flake.recursion_level = 3;
-	flake.angle = 60;
-	flake.ratio = 1.0f/3.0f;
-	flake.extrusion = 1.0f;
+	int shapes = (int)get_from_rocket(track_tunnel_shapes);
+	float gradient_step = get_from_rocket(track_tunnel_gradient_step);
 
-	draw_snowflake_struct(&flake);
+	float scale_step = get_from_rocket(track_tunnel_scale_step);
+	float rotation_step = get_from_rocket(track_tunnel_rotation_step);
+	screenprintf("Tunnel shapes %d", shapes);
+	for(int f = 0; f < shapes; f++)
+	{
+		Gradient_glColor(&rainbow_gradient, 0.00f + gradient_step * f);
+		//glScalef(scale-1.0f*f, scale-1.0f*f, 1.0f);
+		/*
+		float2 pos = center;
+		flake.center = pos;
+		flake.radius = 1.0f;
+		flake.recursion_level = 5;
+		flake.angle = 60;
+		flake.ratio = 1.0f/3.0f;
+		flake.extrusion = 1.0f;
+
+		draw_snowflake_struct(&flake);
+		*/
+		Mesh_DrawArrays(&flake_mesh_recursion4);
+		glScalef(scale_step, scale_step, 1.0f);
+		glRotatef(rotation_step, 0.0f, 0.0f, 1.0f);
+	}
+
 	glPopMatrix();
+	glEnable(GL_DEPTH_TEST);
 }
 
 void fx_flake_wheel()
@@ -350,7 +418,7 @@ void fx_flake_wheel()
 	flake_wheel_fx(center,
 				   420.0f + sin(time*2)*120.0f,
 				   240.0f + sin(time*4)*100.0f,
-				   sin(ctoy_get_time()/20) * 80, sin(ctoy_get_time()/50) * -50, ctoy_get_time() *40, &rotation_outer, &flake.recursive_list, &flake.local_list );
+				   sin(ctoy_get_time()/20) * 80, sin(ctoy_get_time()/50) * -50, ctoy_get_time() *40, &rotation_outer, &flake.recursive_list, &wheel_list );
 	glPopMatrix();
 }
 
@@ -374,7 +442,7 @@ void ctoy_main_loop(void)
 			fx_gosper_curve();
 			break;
 		case 2:
-			fx_single_flake();
+			fx_flake_tunnel();
 			break;
 		case 3:
 			fx_flake_wheel();

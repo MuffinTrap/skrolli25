@@ -25,7 +25,7 @@ static void DrawVerticalGradient(struct Gradient* gradient, float texture_size, 
     float du = 0.0f;
     float dv = 1.0f;
 
-    float ga = 1.0f;
+    float ga = gradient->alpha;
 
     glBegin(GL_TRIANGLE_STRIP);
     //glBegin(GL_LINE_LOOP);
@@ -299,14 +299,17 @@ void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* grad
     {
       case GradientMultiply:
       {
+        GradientTexture_DrawTexture(texture, texture_size);
+
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glBlendFunc(GL_DST_COLOR, GL_ZERO);
 
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, texture->gl_texture_name);
-
-        DrawVerticalGradient(gradient, texture_size, true, gradient_offset, gradient_repeat); break;
-        glDisable(GL_TEXTURE_2D);
+        switch(gradient->shape)
+        {
+          case GradientVertical: DrawVerticalGradient(gradient, texture_size, false, gradient_offset, gradient_repeat); break;
+          case GradientRadial: DrawRadialGradient(gradient, 0.0f, gradient_size, false, gradient_offset, gradient_repeat); break;
+          case GradientCircle: DrawCircleGradient(gradient, gradient_size, gradient_offset, gradient_repeat ); break;
+        }
         glDisable(GL_BLEND);
       }
       break;
@@ -314,7 +317,7 @@ void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* grad
       {
         switch(gradient->shape)
         {
-          case GradientVertical: DrawVerticalGradient(gradient, gradient_size, false, gradient_offset, gradient_repeat); break;
+          case GradientVertical: DrawVerticalGradient(gradient, texture_size, false, gradient_offset, gradient_repeat); break;
           case GradientRadial: DrawRadialGradient(gradient, 0.0f, gradient_size, false, gradient_offset, gradient_repeat); break;
           case GradientCircle: DrawCircleGradient(gradient, gradient_size, gradient_offset, gradient_repeat ); break;
         }

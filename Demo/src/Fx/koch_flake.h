@@ -4,6 +4,7 @@
 #include <m_math.h>
 #include <stdbool.h>
 #include "pointlist.h"
+#include "../Ziz/mesh.h"
 
 struct KochFlake
 {
@@ -14,9 +15,12 @@ struct KochFlake
     float extrusion;
     short recursion_level;
     PointList recursive_list;
-    PointList local_list;
 };
 typedef struct KochFlake KochFlake;
+
+struct KochFlake KochFlake_CreateDefault(short recursion_level);
+
+void KochFlake_WriteToMesh(struct KochFlake* flake, struct Mesh* mesh);
 
 /**
  * @brief Recursively calculate the points on the line and draw the triangle
@@ -29,7 +33,7 @@ typedef struct KochFlake KochFlake;
  * @param recursive_list The PointList to use to collect all points
  * @param local_list The PointList to use to draw local triangles
  */
-void koch_line(float2 A, float2 B, short recursion, float angle, float ratio, float extrusion, PointList* recursive_list, PointList* local_list);
+void koch_line(float2 A, float2 B, short recursion, float angle, float ratio, float extrusion, PointList* recursive_list);
 
 /**
  * @brief Calculate and draw a Koch curve between points A and B
@@ -41,7 +45,7 @@ void koch_line(float2 A, float2 B, short recursion, float angle, float ratio, fl
  * @param recursive_list The PointList to use to collect all points
  * @param local_list The PointList to use to draw local triangles
  */
-void draw_koch(float2 A, float2 B, short recursion, float angle, float ratio, float extrusion, PointList* recursive_list, PointList* local_list);
+void draw_koch(float2 A, float2 B, short recursion, float angle, float ratio, float extrusion, PointList* recursive_list);
 
 /**
  * @brief Draw a koch snowflake around a center point
@@ -50,11 +54,14 @@ void draw_koch(float2 A, float2 B, short recursion, float angle, float ratio, fl
  * @param recursion Recursion level of the shape: minimum 0
  * @param angle Rotation of the shape in degrees
  * @param recursive_list The PointList to use to collect all points
- * @param local_list The PointList to use to draw local triangles
+ * @param display Is the result drawn immediately?
  */
-void draw_snowflake(float2 center, float radius, short recursion, float angle, float ratio, float extrusion, PointList* recursive_list, PointList* local_list);
+void draw_snowflake(float2 center, float radius, short recursion, float angle, float ratio, float extrusion, PointList* recursive_list);
 
 void draw_snowflake_struct(KochFlake* flake);
+
+void store_snowflake_struct(KochFlake* flake);
+void store_snowflake(float2 center, float radius, short recursion, float angle, float ratio, float extrusion, PointList* recursive_list);
 
 /**
  * @brief Break the line from A to B up by ratio and create third point

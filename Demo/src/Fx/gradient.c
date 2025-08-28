@@ -9,6 +9,7 @@ struct Gradient Gradient_CreateEmpty(enum GradientShape shape, enum GradientLoop
     g.color_amount = 0;
     g.shape = shape;
     g.loop_mode = loop_mode;
+    g.alpha = 1.0f;
     return g;
 }
 

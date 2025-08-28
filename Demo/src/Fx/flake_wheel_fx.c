@@ -35,7 +35,7 @@ void flake_wheel_fx(float2 center, float shape_radius, float pattern_radius,
                 0.0f);
             glRotatef(shape_rotation_deg+time, 0.0f, 0.0f, 1.0f);
             glColor3f(0.7f + cos(time * (p+i)/40)*0.5f, 0.6f + sin(time/(p-i*2)/10) * 0.3f, 0.2f + sin(time/30)*0.15f);
-            draw_snowflake(zero2, shape_radius/6.0f, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list, local_list);
+            draw_snowflake(zero2, shape_radius/6.0f, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list);
             glPopMatrix();
         }
 
