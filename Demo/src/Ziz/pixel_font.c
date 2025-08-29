@@ -1,6 +1,7 @@
 #include "pixel_font.h"
 
 #include "opengl_include.h"
+#include <wii_memory_functions.h>
 
 
 #ifdef N64
@@ -561,8 +562,10 @@ PixelFont* PixelFont_LoadDebugFont(void)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE8_ALPHA8, width, height, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, fontImage);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width, height, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, fontImage);
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
+
+        FlushGPUCache(&fontImage, height*width*2);
 
         PixelFont* debugFont = malloc(sizeof(PixelFont));
         debugFont->textureName = texName;

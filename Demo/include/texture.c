@@ -17,6 +17,7 @@
     #define STB_IMAGE_IMPLEMENTATION
     #include <stb_image.h>
     #include <surface.h>
+#   include <wii_memory_functions.h>
     typedef struct {
         unsigned char *data;
         int width;
@@ -278,6 +279,8 @@ int bind_texture(int id) {
         }
         glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, sprites[id]->width, sprites[id]->height,
                 0, format, GL_UNSIGNED_BYTE, sprites[id]->data);
+
+        FlushGPUCache(sprites[id]->data, sprites[id]->width * sprites[id]->height * sprites[id]->channels);
     #endif
     // Set default filtering that will be overridden by the caller
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

@@ -81,9 +81,8 @@ PointList* subtriangle(float2 A, float2 B, float angle, float ratio, float extru
  * @param amount How many points to generate
  * @param radius Radius of the polygon
  * @param angle Initial rotation of the polygon in degrees
- * @param points Pointer to PointList to fill
- * @return Pointer to the PointList filled with points
+ * @return Array of corners
  */
-PointList* get_corners(float2 center, short amount, float radius, float angle, PointList* points);
+void get_corners(float2 center, short amount, float radius, float angle, float2* points);
 
 #endif

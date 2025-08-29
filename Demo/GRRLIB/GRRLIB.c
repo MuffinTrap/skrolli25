@@ -277,21 +277,10 @@ void GRRLIB_InitVideo () {
 
 
 	gp_fifo = (u8 *) memalign(32,DEFAULT_FIFO_SIZE);
-}
-
-void GRRLIB_Start(){
-   
-   f32 yscale;
-   u32 xfbHeight;
-   Mtx44 perspective;
-
 	GX_Init (gp_fifo, DEFAULT_FIFO_SIZE);
 
-	// clears the bg to color and clears the z buffer
-	GXColor background = { 0, 0, 0, 0xff };
-	GX_SetCopyClear (background, 0x00ffffff);
-
-	// other gx setup
+   f32 yscale;
+   u32 xfbHeight;
 	yscale = GX_GetYScaleFactor(rmode->efbHeight,rmode->xfbHeight);
 	xfbHeight = GX_SetDispCopyYScale(yscale);
 	GX_SetScissor(0,0,rmode->fbWidth,rmode->efbHeight);
@@ -305,12 +294,34 @@ void GRRLIB_Start(){
 	else
 		GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 
+	GX_SetViewport(0,0,rmode->fbWidth,rmode->efbHeight,0,1);
+	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
+	GX_SetAlphaUpdate(GX_TRUE);
+
+	GX_SetCullMode(GX_CULL_NONE);
+	// clears the bg to color and clears the z buffer
+	GXColor background = { 0, 0, 0, 0xff };
+	GX_SetCopyClear (background, 0x00ffffff);
+
 	GX_SetDispCopyGamma(GX_GM_1_0);
- 
+
+	GX_ClearVtxDesc();
+	GX_SetNumChans(1);
+	GX_SetNumTexGens(1);
+	GX_SetTevOp (GX_TEVSTAGE0, GX_PASSCLR);
+	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
+
+}
+
+void GRRLIB_Start(){
+   
+   Mtx44 perspective;
+
+	// other gx setup
 
 	// setup the vertex descriptor
 	// tells the flipper to expect direct data
-	GX_ClearVtxDesc();
 		GX_InvVtxCache ();
 		GX_InvalidateTexAll();
 
@@ -324,11 +335,6 @@ void GRRLIB_Start(){
 		GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
 		GX_SetZMode (GX_FALSE, GX_LEQUAL, GX_TRUE);
 
-	GX_SetNumChans(1);
-	GX_SetNumTexGens(1);
-	GX_SetTevOp (GX_TEVSTAGE0, GX_PASSCLR);
-	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
-	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
 
 	guMtxIdentity(GXmodelView2D);
 	guMtxTransApply (GXmodelView2D, GXmodelView2D, 0.0F, 0.0F, -50.0F);
@@ -337,20 +343,15 @@ void GRRLIB_Start(){
 	guOrtho(perspective,0,479,0,639,0,300);
 	GX_LoadProjectionMtx(perspective, GX_ORTHOGRAPHIC);
 
-	GX_SetViewport(0,0,rmode->fbWidth,rmode->efbHeight,0,1);
-	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
-	GX_SetAlphaUpdate(GX_TRUE);
-	
-	GX_SetCullMode(GX_CULL_NONE);
 }
 
 void GRRLIB_Render () {
-        GX_DrawDone ();
 
 	fb ^= 1;		// flip framebuffer
 	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 	GX_SetColorUpdate(GX_TRUE);
 	GX_CopyDisp(xfb[fb],GX_TRUE);
+	GX_DrawDone ();
 	VIDEO_SetNextFramebuffer(xfb[fb]);
  	VIDEO_Flush();
  	VIDEO_WaitVSync();

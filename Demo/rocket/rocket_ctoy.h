@@ -17,5 +17,6 @@ float get_from_rocket(unsigned short id);
 void set_BPM(double val);
 void set_RPB(double val);
 float get_rocket_track_seconds(void);
+void set_rocket_track_seconds(double elapsed_seconds);
 
 #endif

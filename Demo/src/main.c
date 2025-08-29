@@ -31,6 +31,7 @@
 // NOTE gcc compiles texture.c separately and includes stb_image.h twice
 #include "../include/texture.c"
 #include "../include/m_float2_math.c"
+#include "../include/wii_memory_functions.c"
 
 #include "Ziz/mesh.c"
 #include "Ziz/ObjModel.c"
@@ -184,16 +185,27 @@ void ctoy_begin(void)
 	ctoy_window_title("Bnuy");
 	display_init(RESOLUTION_640x480, DEPTH_32_BPP, 2, GAMMA_NONE, FILTERS_DISABLED);
 
-	// Create flake meshes
-	rotation_outer = PointList_create(6);
-	wheel_list = PointList_create(6);
-	flake = KochFlake_CreateDefault(4);
-	KochFlake_WriteToMesh(&flake, &flake_mesh_recursion4);
-	flake.recursion_level = 3;
-	KochFlake_WriteToMesh(&flake, &flake_mesh_recursion3);
+	// Bunny pictures
+	int lost_bunny_texture_id = addTexture("assets/lost_bun.png");
+	int falling_bunny_texture_id = addTexture("assets/falling_bun.png");
 
-	// Stanford bunny
-	bunny_mesh = Bunny_Load("assets/bunny_medium.glb");
+	int logo_texture_id = addTexture("assets/logo.png");
+
+	lost_bunny_texture = GradientTexture_Create(
+		bind_texture(lost_bunny_texture_id),
+		lost_bunny_texture_id,
+		GradientMultiply);
+
+	falling_bunny_texture = GradientTexture_Create(
+		bind_texture(falling_bunny_texture_id),
+		falling_bunny_texture_id,
+		GradientMultiply);
+
+	logo_texture = GradientTexture_Create(
+		bind_texture(logo_texture_id),
+		logo_texture_id,
+		GradientCutout
+	);
 
 	// Colors and gradients
 	ColorManager_LoadColors();
@@ -229,27 +241,16 @@ void ctoy_begin(void)
 
 	}
 
-	// Bunny pictures
-	int lost_bunny_texture_id = addTexture("assets/lost_bun.png");
-	int falling_bunny_texture_id = addTexture("assets/falling_bun.png");
+	// Create flake meshes
+	rotation_outer = PointList_create(6);
+	wheel_list = PointList_create(6);
+	flake = KochFlake_CreateDefault(4);
+	KochFlake_WriteToMesh(&flake, &flake_mesh_recursion4);
+	flake.recursion_level = 3;
+	KochFlake_WriteToMesh(&flake, &flake_mesh_recursion3);
 
-	int logo_texture_id = addTexture("assets/logo.png");
-
-	lost_bunny_texture = GradientTexture_Create(
-		bind_texture(lost_bunny_texture_id),
-		lost_bunny_texture_id,
-		GradientMultiply);
-
-	falling_bunny_texture = GradientTexture_Create(
-		bind_texture(falling_bunny_texture_id),
-		falling_bunny_texture_id,
-		GradientMultiply);
-
-	logo_texture = GradientTexture_Create(
-		bind_texture(logo_texture_id),
-		logo_texture_id,
-		GradientCutout
-	);
+	// Stanford bunny
+	bunny_mesh = Bunny_Load("assets/bunny_medium.glb");
 
 	// Gosper curve
 	float2 gstart = {00.0f, 00.0f};
@@ -393,7 +394,6 @@ void fx_ears()
 		glTranslatef(130.0f, 0.0f, 0.0f);
 		tri();
 	glPopMatrix();
-
 }
 
 void fx_gradient_bunny()
@@ -532,13 +532,16 @@ void fx_rotation_illusion()
 	float2 center = {ctoy_frame_buffer_width()/2, ctoy_frame_buffer_height()/2};
 	glPushMatrix();
 	//float3 color1 = {0.8f, 0.2f, 0.35f};
-	float3 color1 = {0.2f, 0.2f, 0.2f};
-	float3 color2 = {0.2f, 0.2f, 0.5f};
+
+	float color1 = 0.0f;
+	float color2 = 1.0f;
 	float speed = 4.0f;
 	float scale = 3.0f;
 	float progress = ctoy_get_time()/5;
-	rotation_fx(center, scale, speed, progress, color1, color2,
-				&rotation_outer, &flake.recursive_list);
+	rotation_fx(&flake_mesh_recursion4,
+				scale, speed, progress,
+			 select_gradient(),
+			 color1, color2);
 	glPopMatrix();
 }
 
@@ -628,13 +631,15 @@ void fx_flake_wheel()
 	);
 	float2 center = {0.0f, 0.0f};
 	float time = ctoy_get_time();
-	flake_wheel_fx(center,
-				   420.0f + sin(time*2)*120.0f,
-				   240.0f + sin(time*4)*100.0f,
-				   sin(ctoy_get_time()/20) * 80, sin(ctoy_get_time()/50) * -50, ctoy_get_time() *40,
-				   select_gradient(),
-				get_from_rocket(track_gradient_offset),
-				   &rotation_outer, &flake.recursive_list, &wheel_list );
+
+	struct Gradient* grad = select_gradient();
+	flake_wheel_fx(&flake_mesh_recursion4,
+				   100.0f,
+					100.0f,
+					0.0f,
+				ctoy_get_time(),
+				grad,
+				get_from_rocket(track_gradient_offset));
 	glPopMatrix();
 }
 
@@ -663,6 +668,7 @@ void ctoy_main_loop(void)
 
 	float scene_number = get_from_rocket(track_scene);
 	screenprintf("Active scene %.0f", scene_number);
+	/*
 	const int scene = scene_number;
 	switch(scene)
 	{
@@ -687,8 +693,10 @@ void ctoy_main_loop(void)
 	}
 
 
+	*/
 	screenprintf("I am all ears");
 	update_timing();
+	fx_gradient_bunny();
 	screenprint_draw_prints();
 
 	ctoy_swap_buffer(NULL);

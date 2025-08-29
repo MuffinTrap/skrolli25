@@ -493,6 +493,81 @@ static int create_track(struct sync_device *d, const char *name)
 	return (int)d->num_tracks - 1;
 }
 
+#ifdef GEKKO
+// Simplified JSON parser for N64 and Wii
+static struct sync_track* parse_json_track(const char* json, const char* name) {
+	char buffer[256];
+	struct sync_track* track = NULL;
+	const char* pos = json;
+
+	// Search for track name
+	snprintf(buffer, sizeof(buffer), "\"name\":\"%s\"", name);
+	pos = strstr(pos, buffer);
+	if (!pos) return NULL;
+
+	// Find keys array
+	pos = strstr(pos, "\"keys\":[");
+	if (!pos) return NULL;
+	pos += 7;
+
+	// Count keys
+	int num_keys = 0;
+	const char* key_start = pos;
+	while (*key_start && *key_start != ']') {
+		if (*key_start == '{') num_keys++;
+		key_start++;
+	}
+
+	track = malloc(sizeof(struct sync_track));
+	track->keys = malloc(num_keys * sizeof(struct track_key));
+	track->num_keys = num_keys;
+	track->name = strdup(name);
+
+	// Parse keys
+	for (int i = 0; i < num_keys; i++) {
+		pos = strchr(pos, '{');
+		if (!pos) break;
+
+		// Parse row
+		pos = strstr(pos, "\"row\":");
+		track->keys[i].row = atoi(pos + 6);
+
+		// Parse value
+		pos = strstr(pos, "\"value\":");
+		track->keys[i].value = atof(pos + 8);
+
+		// Parse type
+		pos = strstr(pos, "\"type\":");
+		track->keys[i].type = atoi(pos + 7);
+	}
+
+	return track;
+}
+const struct sync_track* sync_get_track(struct sync_device* d, const char* name) {
+	FILE* file = fopen("sourcefiles/rocket.json", "r");
+	if (!file) {
+		printf("File open FAILED sourcefiles/rocket.json %s\n", name);
+		//wait_ms(1000);
+		return NULL;
+	}
+
+	fseek(file, 0, SEEK_END);
+	long length = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	char* json = malloc(length + 1);
+	fread(json, 1, length, file);
+	json[length] = '\0';
+	fclose(file);
+
+	struct sync_track* track = parse_json_track(json, name);
+	free(json);
+
+	return track;
+}
+
+#else
+
 const struct sync_track *sync_get_track(struct sync_device *d,
     const char *name)
 {
@@ -516,3 +591,4 @@ const struct sync_track *sync_get_track(struct sync_device *d,
 
 	return t;
 }
+#endif

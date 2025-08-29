@@ -9,19 +9,22 @@
 #include <fat.h>
 #include "mp3play.h"
 
+#include "../rocket/rocket_ctoy.h"
 
 
 #include <surface.h>
 #include <display.h>
 
-static double elapsedSeconds = 0.0;
 static u32 framesTotal = 0;
+static double elapsedTimeS = 0.0;
+static u64 deltaTimeStart;
+static float deltaTimeS;
 
 static u8 CalculateFrameRate(void) {
     static u8 frameCount = 0;
     static u32 lastTime = 0;
     static u8 FPS = 0;
-    const u32 currentTime = ticks_to_millisecs(gettime());
+    const u32 currentTime = ticks_to_millisecs(gettick());
 
     frameCount++;
     framesTotal++;
@@ -44,9 +47,10 @@ void grrlib_init()
 
 
     GRRLIB_InitVideo();
+    //GRRLIB_Start();
     ogx_initialize();
-    GRRLIB_Start();
 }
+
 
 int main()
 {
@@ -66,15 +70,13 @@ int main()
     }
     */
 
-    struct Mp3Song song = Mp3_LoadSong("assets/Soulbringer - Goa Trolls.mp3");
+    struct Mp3Song song = Mp3_LoadSong("assets/Brian-Psy_Rabbit.mp3");
     if (song.mp3file != NULL)
     {
         Mp3_PlaySong(&song);
     }
 
-    // Discard first frame
-    CalculateFrameRate();
-
+    deltaTimeStart = gettime();
 
     while(true)
     {
@@ -84,16 +86,26 @@ int main()
         {
             break;
         }
+		u64 now = gettime();
+		deltaTimeS = (float)(now - deltaTimeStart) / (float)(TB_TIMER_CLOCK * 1000); // division is to convert from ticks to seconds
+		deltaTimeStart = now;
+		elapsedTimeS += deltaTimeS;
 
-        float delta = 1.0f / (float)CalculateFrameRate();
-        // Avoid 0 delta
-        if (delta < 0.016f)
-        {
-            delta = 0.016f;
-        }
-        elapsedSeconds += delta;
+        // Do rocket udpdate
+        set_rocket_track_seconds(elapsedTimeS);
+
 
         ctoy_main_loop();
+
+        //GRRLIB_FillScreen(0xffffffff);
+        //GRRLIB_Rectangle(40, 40, 100, 100, 0xff4466ff, 1);
+        /*
+        glBegin(GL_LINES);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glVertex2f(10.0f, 10.0f);
+        glVertex2f(100.0f, 100.0f);
+        glEnd();
+        */
     }
 
     Mp3_Stop(&song);
@@ -110,6 +122,7 @@ void display_init(resolution_t res, bitdepth_t bit, uint32_t num_buffers, gamma_
 
 void ctoy_swap_buffer(struct m_image *src)
 {
+    glFlush();
     GRRLIB_Render();
 }
 
@@ -120,7 +133,7 @@ unsigned long ctoy_t(void)
 
 double ctoy_get_time(void)
 {
-    return elapsedSeconds;
+    return elapsedTimeS;
 }
 
 void ctoy_sleep(long sec, long nsec)

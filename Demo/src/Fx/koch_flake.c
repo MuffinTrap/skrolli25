@@ -83,11 +83,8 @@ void draw_koch(float2 A, float2 B, short recursion, float angle, float ratio, fl
     koch_line(A, B, recursion, angle, ratio, extrusion, recursive_list);
 }
 
-
-PointList* get_corners(float2 center, short amount, float radius, float angle, PointList* list)
+void get_corners(float2 center, short amount, float radius, float angle, float2* points)
 {
-    PointList_reserve(list, (size_t)amount);
-
     float corners = (float)amount;
     float step = (M_PI * 2.0f) / corners;
     float radians = angle * M_DEG_TO_RAD;
@@ -99,10 +96,9 @@ PointList* get_corners(float2 center, short amount, float radius, float angle, P
     {
         rotated = M_ROTATE2(start, current_angle);
         M_ADD2(point, rotated, center);
-        PointList_set_point(list, point, i);
+        points[i] = point;
         current_angle += step;
     }
-    return list;
 }
 
 void store_snowflake_struct(KochFlake* flake)
@@ -118,13 +114,17 @@ void store_snowflake(float2 center, float radius, short recursion, float angle, 
     }
     PointList_clear(recursive_list);
 
-    recursive_list = get_corners(center, 3, radius, angle, recursive_list);
+    float2 points[3];
+    get_corners(center, 3, radius, angle, points);
+    PointList_push_point(recursive_list, points[0]);
+    PointList_push_point(recursive_list, points[1]);
+    PointList_push_point(recursive_list, points[2]);
     if (recursion > 0)
     {
-        draw_koch(recursive_list->points[2], recursive_list->points[1], recursion, angle, ratio, extrusion, recursive_list);
-        draw_koch(recursive_list->points[1], recursive_list->points[0], recursion, angle, ratio, extrusion, recursive_list);
-        draw_koch(recursive_list->points[0],
-                recursive_list->points[2], recursion, angle, ratio, extrusion, recursive_list);
+        draw_koch(points[2], points[1], recursion, angle, ratio, extrusion, recursive_list);
+        draw_koch(points[1], points[0], recursion, angle, ratio, extrusion, recursive_list);
+        draw_koch(points[0],
+                points[2], recursion, angle, ratio, extrusion, recursive_list);
     }
 }
 

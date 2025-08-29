@@ -1,8 +1,15 @@
 #ifndef ROTATION_FX_H
 #define ROTATION_FX_H
-#include "pointlist.h"
+#include "../Ziz/mesh.h"
+#include "gradient.h"
 #include <m_math.h>
 
-void rotation_fx(float2 center, float radius_scale, float speed, float progress_normalized, float3 color1, float3 color2, PointList* outerCenters, PointList* recursive_list);
+void rotation_fx(struct Mesh* flake,
+                 float radius_scale,
+                 float speed,
+                 float progress_normalized,
+                 struct Gradient* gradient,
+                 float color_1_stop,
+                 float color_2_stop);
 
 #endif

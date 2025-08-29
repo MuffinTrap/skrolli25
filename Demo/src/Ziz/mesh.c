@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include <opengl_include.h>
 
 struct Mesh Mesh_CreateEmpty(void)
 {
