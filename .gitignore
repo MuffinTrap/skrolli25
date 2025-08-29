@@ -52,4 +52,7 @@ Demo/.kdev4/
 # Work files
 Work/
 
+# Temp files
+*.png~
+
 

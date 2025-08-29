@@ -1,6 +1,7 @@
 #include "gradient.h"
 
 #include "../Ziz/screenprint.h"
+#include "color_manager.h"
 #include <opengl_include.h>
 
 struct Gradient Gradient_CreateEmpty(enum GradientShape shape, enum GradientLoopMode loop_mode)
@@ -10,6 +11,7 @@ struct Gradient Gradient_CreateEmpty(enum GradientShape shape, enum GradientLoop
     g.shape = shape;
     g.loop_mode = loop_mode;
     g.alpha = 1.0f;
+    g.repeats = 1.0f;
     return g;
 }
 
@@ -20,6 +22,30 @@ void Gradient_PushColor(struct Gradient* gradient, color3* color, float stop)
         gradient->colors[gradient->color_amount] = color;
         gradient->stops[gradient->color_amount] = stop;
         gradient->color_amount++;
+    }
+}
+
+void Gradient_PushName(struct Gradient* gradient, enum ColorName name, float stop)
+{
+    if (gradient->color_amount + 1 < GRADIENT_SIZE)
+    {
+        gradient->colors[gradient->color_amount] = ColorManager_GetName(name);
+        gradient->stops[gradient->color_amount] = stop;
+        gradient->color_amount++;
+    }
+}
+
+void Gradient_PushColorArray(struct Gradient* gradient, enum ColorName* colors, short amount)
+{
+    if (amount < GRADIENT_SIZE)
+    {
+        float step = 1.0f/(float)amount;
+        for (short i = 0; i < amount; i++)
+        {
+            gradient->colors[i] = ColorManager_GetName(colors[i]);
+            gradient->stops[i] = step * i;
+        }
+        gradient->color_amount = amount;
     }
 }
 
@@ -46,6 +72,11 @@ color3 Gradient_GetColor(struct Gradient* gradient, float stop)
     short after_index = gradient->color_amount;
     float read_stop = 0.0f;
 
+    if (stop < 0.0f)
+    {
+        stop = stop * -1.0f;
+    }
+
     if (stop > 1.0f)
     {
         // Going forward or backward?
@@ -55,27 +86,10 @@ color3 Gradient_GetColor(struct Gradient* gradient, float stop)
         const float decimal_part = (stop - floor(stop));
         //screenprintf("Decimal %f, Modulo %d", decimal_part, modulo);
         read_stop = decimal_part;
-        /*
         if (gradient->loop_mode == GradientLoopRepeat)
         {
             // Change to 2.15 -> 0.15
-
-            // If reaching full repeat,
-            if (decimal_part < 0.0001f)
-            {
-                if (modulo == 0)
-                {
-                    read_stop = 0.0f;
-                }
-                else
-                {
-                    read_stop = 1.0f;
-                }
-            }
-            else
-            {
-                read_stop = decimal_part;
-            }
+            read_stop = decimal_part;
         }
         if (gradient->loop_mode == GradientLoopMirror)
         {
@@ -90,7 +104,6 @@ color3 Gradient_GetColor(struct Gradient* gradient, float stop)
                 read_stop = 1.0f - decimal_part;
             }
         }
-        */
     }
     else
     {

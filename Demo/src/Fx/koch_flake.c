@@ -18,14 +18,6 @@ static float2 rotate_z_point(float2 vector, float radians, float2 point)
     return rotated;
 }
 
-static float2 direction_2d(float2 A, float2 B)
-{
-    float2 dir;
-    M_SUB2(dir, B, A);
-    M_NORMALIZE2(dir, dir);
-    return dir;
-}
-
 static float2 lerp_normalized(float2 A, float2 B, float t)
 {
     float2 AB;

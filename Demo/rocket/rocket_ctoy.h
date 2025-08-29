@@ -16,5 +16,6 @@ unsigned short add_to_rocket(const char *name);
 float get_from_rocket(unsigned short id);
 void set_BPM(double val);
 void set_RPB(double val);
+float get_rocket_track_seconds(void);
 
 #endif

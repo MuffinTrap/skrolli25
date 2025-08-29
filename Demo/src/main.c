@@ -22,7 +22,6 @@
 #include "Fx/gradient.h"
 #include "Fx/gradient_texture.h"
 #include "Fx/gosper_curve.h"
-//#include "../rocket/rocket_ctoy.h"
 
 
 // Code
@@ -48,7 +47,16 @@
 #include "Fx/gosper_curve.c"
 #endif
 
+// screen dimensions
+static float center_x;
+static float center_y;
+
 // Rocket tracks
+// Timing
+static int track_row;
+static float row_rate;
+static float bpm = 144.0f;
+static float rpb = 4.0f;
 
 // Common
 static int track_scene;	// Currently active scene
@@ -61,13 +69,20 @@ static int track_rotation_y;	  // glRotate x,y,z for effect
 static int track_rotation_z;	  // glRotate x,y,z for effect
 
 // Fx tracks
+
+// Gradient
 static int track_gradient_mode;
 static int track_gradient_shape;
 static int track_gradient_offset;
 static int track_gradient_repeat;
 static int track_gradient_index;
 static int track_gradient_size;
+
+// 2D bunny and logo and credits
 static int track_bunny_index;
+static int track_bunny_x;
+static int track_bunny_y;
+static int track_bunny_size;
 
 // Flake drawing offsets
 static int track_flake_ratio_off;
@@ -79,6 +94,19 @@ static int track_tunnel_shapes;
 static int track_tunnel_scale_step;
 static int track_tunnel_rotation_step;
 static int track_tunnel_gradient_step;
+
+// Gosper curve
+static int track_gosper_segments;
+static int track_gosper_follow_on;
+
+// Stanford bunny
+static int track_stanford_light_on;
+static int track_stanford_light_dir;
+
+// TODO Scissors rectangles
+
+
+// Variables
 
 
 // Koch flakes
@@ -93,17 +121,24 @@ static struct Bunny bunny_mesh;
 
 // Bunny gradient
 static struct GradientTexture lost_bunny_texture;
+static struct GradientTexture falling_bunny_texture;
+static struct GradientTexture logo_texture;
+
+// Gradients
+static struct Gradient white_gradient;
 static struct Gradient rainbow_gradient;
+static struct Gradient halo_gradient;
 
 // Gosper curve fx
 static PointList gosper_list;
-static float gosper_length = 0.0f;
-static float gosper_speed = 0.0f;
+
 
 static void init_rocket_tracks(void)
 {
-	set_BPM(144.0f);
-	set_RPB(4.0f);
+	set_BPM(bpm);
+	set_RPB(rpb);
+    row_rate = (bpm / 60.0) * rpb;
+	track_row = add_to_rocket("row");
 	track_scene = add_to_rocket("scene");
 	track_translate_x = add_to_rocket("translate_x");
 	track_translate_y = add_to_rocket("translate_y");
@@ -119,7 +154,11 @@ static void init_rocket_tracks(void)
 	track_gradient_repeat = add_to_rocket("gradient_repeat");
 	track_gradient_index = add_to_rocket("gradient_index");
 	track_gradient_size = add_to_rocket("gradient_size");
+
 	track_bunny_index = add_to_rocket("bunny_index");
+	track_bunny_x = add_to_rocket("bunny_x");
+	track_bunny_y = add_to_rocket("bunny_y");
+	track_bunny_size = add_to_rocket("bunny_size");
 
 	track_flake_ratio_off = add_to_rocket("flake_ratio_off");
 	track_flake_angle_off = add_to_rocket("flake_angle_off");
@@ -130,6 +169,13 @@ static void init_rocket_tracks(void)
 	track_tunnel_scale_step = add_to_rocket("tunnel_scale_step");
 	track_tunnel_rotation_step = add_to_rocket("tunnel_rotation_step");
 	track_tunnel_gradient_step = add_to_rocket("tunnel_gradient_step");
+
+	// Gosper curve tracks
+	track_gosper_follow_on = add_to_rocket("gosper_follow");
+	track_gosper_segments = add_to_rocket("gosper_segments");
+
+	track_stanford_light_on = add_to_rocket("stfrd_light_on");
+	track_stanford_light_dir = add_to_rocket("stfrd_light_dir");
 }
 
 
@@ -152,24 +198,69 @@ void ctoy_begin(void)
 	// Colors and gradients
 	ColorManager_LoadColors();
 	rainbow_gradient = Gradient_CreateEmpty(GradientCircle, GradientLoopRepeat);
-	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorRose), 0.0f);
-	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorPurple), 0.5f);
-	Gradient_PushColor(&rainbow_gradient, ColorManager_GetName(ColorCyanblue), 1.0f);
+	{
+		enum ColorName rainbow[] = {
+			ColorRose,
+			ColorDarkOrange,
+			ColorOrange,
+			ColorLightOrange,
+			ColorOliveGreen,
+			ColorGreen,
+			ColorCyanBlue,
+			ColorBlue,
+			ColorPurple
+		};
+		Gradient_PushColorArray(&rainbow_gradient, rainbow, 9);
+	}
+
+	white_gradient = Gradient_CreateEmpty(GradientVertical, GradientLoopRepeat);
+	{
+		Gradient_PushColor(&white_gradient, ColorManager_GetName(ColorWhite), 0.0f);
+		Gradient_PushColor(&white_gradient, ColorManager_GetName(ColorWhite), 1.0f);
+	}
+
+	halo_gradient = Gradient_CreateEmpty(GradientCircle, GradientLoopRepeat);
+	{
+		Gradient_PushName(&halo_gradient, ColorBlackBlue, 0.0f);
+		Gradient_PushName(&halo_gradient, ColorCyanBlue, 0.4f);
+		Gradient_PushName(&halo_gradient, ColorWhite, 0.5f);
+		Gradient_PushName(&halo_gradient, ColorCyanBlue, 0.6f);
+		Gradient_PushName(&halo_gradient, ColorBlackBlue, 1.0f);
+
+	}
 
 	// Bunny pictures
-	int bunny_texture_id = addTexture("assets/lost_bun.png");
-    GLuint gl_tex_name = bind_texture(bunny_texture_id);
+	int lost_bunny_texture_id = addTexture("assets/lost_bun.png");
+	int falling_bunny_texture_id = addTexture("assets/falling_bun.png");
 
-	lost_bunny_texture = GradientTexture_Create(gl_tex_name, bunny_texture_id, GradientCutout);
+	int logo_texture_id = addTexture("assets/logo.png");
+
+	lost_bunny_texture = GradientTexture_Create(
+		bind_texture(lost_bunny_texture_id),
+		lost_bunny_texture_id,
+		GradientMultiply);
+
+	falling_bunny_texture = GradientTexture_Create(
+		bind_texture(falling_bunny_texture_id),
+		falling_bunny_texture_id,
+		GradientMultiply);
+
+	logo_texture = GradientTexture_Create(
+		bind_texture(logo_texture_id),
+		logo_texture_id,
+		GradientCutout
+	);
 
 	// Gosper curve
 	float2 gstart = {00.0f, 00.0f};
 	float2 gdir = {0.0f, 1.0f};
 	float gosper_lenght = 5.0f;
-	short gosper_recursion = 2;
-	gosper_list = Gosper_Create(gstart, gdir, gosper_lenght, gosper_recursion);
+	short gosper_recursion = 3;
+	float gosper_width = 2.0f;
+	gosper_list = Gosper_Create(gstart, gdir, gosper_lenght, gosper_width, gosper_recursion);
 
 	init_rocket_tracks();
+
 }
 
 void ctoy_end(void)
@@ -210,7 +301,6 @@ void start_frame_2D( void )
 {
 
     //glDisable(GL_TEXTURE_2D);
-    //glDisable(GL_LIGHTING);
     // glEnable(GL_BLEND);
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_DEPTH_TEST);
@@ -231,6 +321,60 @@ void tri()
 		glVertex2f(100.0f, 10.0f);
 		glVertex2f(50.0f, 100.0f);
 	glEnd();
+}
+
+struct Gradient* select_gradient()
+{
+	struct Gradient* grad;
+	switch( (int)get_from_rocket(track_gradient_index))
+	{
+		case 0: grad = &rainbow_gradient; break;
+		case 1: grad = &halo_gradient; break;
+		default: grad = &white_gradient; break;
+	}
+
+	int shape = (int)get_from_rocket(track_gradient_shape);
+	screenprintf("Selected shape %d", shape);
+
+	float repeat = get_from_rocket(track_gradient_repeat);
+
+	switch(shape)
+	{
+		case GradientVertical:
+			grad->shape = GradientVertical;
+			break;
+		case GradientRadial:
+			grad->shape = GradientRadial;
+			break;
+		case GradientCircle:
+			grad->shape = GradientCircle;
+			break;
+		default:
+			grad->shape = GradientVertical;
+	}
+	return grad;
+}
+
+struct GradientTexture* select_texture()
+{
+	struct GradientTexture* text;
+	switch((int)get_from_rocket(track_bunny_index))
+	{
+		case 0: text = &lost_bunny_texture; break;
+		case 1: text = &falling_bunny_texture; break;
+		case 2: text = &logo_texture; break;
+		default: return NULL;
+	}
+	switch((int)get_from_rocket(track_gradient_mode))
+	{
+		case GradientMultiply:
+			text->alphamode = GradientMultiply;
+			break;
+		case GradientCutout:
+			text->alphamode = GradientCutout;
+			break;
+	}
+	return text;
 }
 
 void fx_ears()
@@ -260,34 +404,11 @@ void fx_gradient_bunny()
 	float offset = get_from_rocket(track_gradient_offset);
 	float repeat = get_from_rocket(track_gradient_repeat);
 	float gradient_size = get_from_rocket(track_gradient_size);
-	// TODO choose gradient
-	struct Gradient* grad = &rainbow_gradient;
+	struct Gradient* grad = select_gradient();
 
-	// TODO choose texture
-	struct GradientTexture* text = &lost_bunny_texture;
+	struct GradientTexture* text = select_texture();
 
-	switch((int)get_from_rocket(track_gradient_mode))
-	{
-		case GradientMultiply:
-			text->alphamode = GradientMultiply;
-			break;
-		case GradientCutout:
-			text->alphamode = GradientCutout;
-			break;
-	}
 
-	switch((int)get_from_rocket(track_gradient_shape))
-	{
-		case GradientVertical:
-			grad->shape = GradientVertical;
-			break;
-		case GradientRadial:
-			grad->shape = GradientRadial;
-			break;
-		case GradientCircle:
-			grad->shape = GradientCircle;
-			break;
-	}
 
 	start_frame_2D();
 	glPushMatrix();
@@ -302,37 +423,108 @@ void fx_gradient_bunny()
 
 void fx_gosper_curve()
 {
+	static float2 last_point;
 	short x = get_from_rocket(track_translate_x);
 	short y = get_from_rocket(track_translate_y);
+	float rotz = get_from_rocket(track_rotation_z);
 	float scale = get_from_rocket(track_scale_xyz);
 	start_frame_2D();
 	glPushMatrix();
 
-		glTranslatef(ctoy_frame_buffer_width()/2+x, ctoy_frame_buffer_height()/2+y, 0.0f);
+		if (get_from_rocket(track_gosper_follow_on) > 0.0f)
+		{
+			x = -last_point.x;
+			y = -last_point.y;
+		}
+		glTranslatef(ctoy_frame_buffer_width()/2, ctoy_frame_buffer_height()/2, 0.0f);
+		glRotatef(rotz, 0.0f, 0.0f, 1.0f);
 		glScalef(scale, scale, 1.0f);
-		glColor3f(1.0f, 1.0f, 1.0f);
+		glPushMatrix();
 
-		Gosper_Draw(&gosper_list, gosper_length);
+			// TODO Smooth follow of target
+			glTranslatef(x, y, 0.0f);
+			last_point = Gosper_Draw(&gosper_list, &rainbow_gradient, get_from_rocket(track_gosper_segments));
+		glPopMatrix();
 	glPopMatrix();
-
-	gosper_speed = 0.1f;
-	gosper_length += gosper_speed;
 }
 
 void fx_stanford_bunny()
 {
+	// Draw gradient bg
+	struct Gradient* bg_grad = select_gradient();
+	if (bg_grad != &white_gradient)
+	{
+		screenprintf("Gradient bg shape %d", bg_grad->shape);
+		start_frame_2D();
+
+		glPushMatrix();
+
+			glTranslatef(ctoy_frame_buffer_width()/2, ctoy_frame_buffer_height()/2, 0.0f);
+			glScalef(1.0f, 1.0f, 1.0f);
+			glBegin(GL_LINES);
+			glColor3f(1.0f, 1.0f, 1.0f);
+			glVertex2f(0.0f, 0.0f);
+			glVertex2f(100.0f, 0.0f);
+
+			glEnd();
+
+			GradientTexture_DrawGradient(bg_grad, GradientCutout,
+										 get_from_rocket(track_gradient_size), get_from_rocket(track_gradient_offset), get_from_rocket(track_gradient_repeat));
+		glPopMatrix();
+	}
+
 	start_frame_3D();
+	bool lights_on = get_from_rocket(track_stanford_light_on) > 0.0f;
+	static float3 y_axis = {0.0f, 1.0f, 0.0f};
+
+	if (lights_on)
+	{
+		float matrix[] = M_MAT4_IDENTITY();
+		m_mat4_rotation_axis(matrix, &y_axis, get_from_rocket(track_stanford_light_dir) * M_DEG_TO_RAD);
+		float3 dir = {0.0f, 0.0f, 1.0f};
+		float3 light_dir;
+		m_mat4_transform3(
+			&light_dir,
+			matrix,
+			&dir);
+		// w == 0 makes this a directional light
+		GLfloat light_dir_4[] = {light_dir.x, light_dir.y, light_dir.z, 0.0f};
+		GLfloat mat_specular[] = {1.0f, 1.0f, 1.0f, 1.0f};
+		GLfloat mat_shiny[] = {50.0};
+		GLfloat light_color[] = {1.0f, 1.0f, 1.0f, 1.0f};
+
+		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shiny);
+		glLightfv(GL_LIGHT0, GL_POSITION, light_dir_4);
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, light_color);
+		glLightfv(GL_LIGHT0, GL_SPECULAR, light_color);
+
+		// Preserver normals when scaling
+		glEnable(GL_NORMALIZE);
+		glEnable(GL_LIGHTING);
+		glEnable(GL_LIGHT0);
+	}
 	glPushMatrix();
 
-	float3 c3 = {0.0f, 0.0f, 0.7f};
-	glTranslatef(c3.x, c3.y, c3.z);
+	glTranslatef(
+		get_from_rocket(track_translate_x),
+		get_from_rocket(track_translate_y),
+		get_from_rocket(track_translate_z)
+	);
+	glRotatef(get_from_rocket(track_rotation_x), 1.0f, 0.0f, 0.0f);
+	glRotatef(get_from_rocket(track_rotation_y), 0.0f, 1.0f, 0.0f);
+	glRotatef(get_from_rocket(track_rotation_z), 0.0f, 0.0f, 1.0f);
 
-	glRotatef(ctoy_get_time()*60.0f, 0.3f, 1.0f, 0.0f);
+	float scale = get_from_rocket(track_scale_xyz);
+	glScalef(scale, scale, scale);
 	glColor3f(1.0f, 1.0f, 1.0f);
 	Bunny_Draw_immediate(&bunny_mesh, DrawTriangles);
 
 	glPopMatrix();
-
+	if (lights_on)
+	{
+		glDisable(GL_LIGHTING);
+	}
 }
 
 void fx_rotation_illusion()
@@ -354,6 +546,7 @@ void fx_flake_tunnel()
 {
 	start_frame_3D();
 
+	glPushMatrix();
 	flake.ratio = 1.0f/3.0f + get_from_rocket(track_flake_ratio_off) / 100.0f;
 	flake.extrusion = 1.0f + get_from_rocket(track_flake_extrusion_off) / 100.0f;
 	flake.angle = 60.0f + get_from_rocket(track_flake_angle_off);
@@ -375,16 +568,16 @@ void fx_flake_tunnel()
 
 	float2 center = {0.0f, 0.0f};
 
-	glPushMatrix();
 	int shapes = (int)get_from_rocket(track_tunnel_shapes);
 	float gradient_step = get_from_rocket(track_tunnel_gradient_step);
 
 	float scale_step = get_from_rocket(track_tunnel_scale_step);
 	float rotation_step = get_from_rocket(track_tunnel_rotation_step);
 	screenprintf("Tunnel shapes %d", shapes);
+	struct Gradient* grad = select_gradient();
 	for(int f = 0; f < shapes; f++)
 	{
-		Gradient_glColor(&rainbow_gradient, 0.00f + gradient_step * f);
+		Gradient_glColor(grad, 0.00f + gradient_step * f);
 		//glScalef(scale-1.0f*f, scale-1.0f*f, 1.0f);
 		/*
 		float2 pos = center;
@@ -403,6 +596,23 @@ void fx_flake_tunnel()
 	}
 
 	glPopMatrix();
+
+	// Overdraw bunny?
+	struct GradientTexture* bunny = select_texture();
+	if (bunny != NULL)
+	{
+		start_frame_2D();
+		glPushMatrix();
+		glTranslatef(
+			center_x + get_from_rocket(track_bunny_x),
+			center_y + get_from_rocket(track_bunny_y),
+			0.0f
+		);
+
+		GradientTexture_DrawTexture(bunny, get_from_rocket(track_bunny_size));
+		glPopMatrix();
+	}
+
 	glEnable(GL_DEPTH_TEST);
 }
 
@@ -422,9 +632,24 @@ void fx_flake_wheel()
 	glPopMatrix();
 }
 
+void update_timing()
+{
+	// TODO show scene duration
+	float row = get_from_rocket(track_row);
+	float seconds = row /row_rate;
+	float minutes = seconds/60.0f;
+	screenprintf("Music time %.0f:%.2f", minutes, (minutes-floor(minutes)) * 60.0f);
+	float beat = row / rpb;
+	float measures = beat/4.0f;
+	short sbeat = floor(beat);
+	screenprintf("Music bar/beat %.1f:%d", measures, sbeat%4 + 1) ;
+}
+
 
 void ctoy_main_loop(void)
 {
+	center_x = ctoy_frame_buffer_width()/2;
+	center_y = ctoy_frame_buffer_height()/2;
 	clear_screen();
 	start_frame_2D();
 	screenprint_start_frame();
@@ -450,10 +675,14 @@ void ctoy_main_loop(void)
 		case 4:
 			fx_stanford_bunny();
 			break;
+		case 5:
+			fx_rotation_illusion();
+			break;
 	}
 
 
 	screenprintf("I am all ears");
+	update_timing();
 	screenprint_draw_prints();
 
 	ctoy_swap_buffer(NULL);

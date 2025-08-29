@@ -17,8 +17,15 @@ enum ColorName
     ColorBlack,
 
     ColorRose,
+    ColorDarkOrange,
+    ColorOrange,
+    ColorLightOrange,
+    ColorOliveGreen,
+    ColorGreen,
+    ColorCyanBlue,
+    ColorBlue,
     ColorPurple,
-    ColorCyanblue
+    ColorBlackBlue
 };
 
 void ColorManager_LoadColors(void);

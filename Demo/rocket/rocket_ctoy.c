@@ -87,3 +87,8 @@ void set_RPB(double val) {
     row_rate = (bpm / 60.0) * rpb;
     printf("bpm %.2f rpb %.2f row_rate %.2f\n", bpm, rpb, row_rate);
 }
+
+float get_rocket_track_seconds(void)
+{
+    return row/row_rate;
+}

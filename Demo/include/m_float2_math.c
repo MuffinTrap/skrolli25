@@ -19,3 +19,11 @@ void M_ROTATE2_PTR(float2* v, float radians) {
 	v->x = xt;
     v->y = yt;
 }
+
+float2 direction_2d(float2 A, float2 B)
+{
+    float2 dir;
+    M_SUB2(dir, B, A);
+    M_NORMALIZE2(dir, dir);
+    return dir;
+}

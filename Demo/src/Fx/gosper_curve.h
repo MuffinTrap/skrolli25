@@ -3,15 +3,17 @@
 
 #include <m_math.h>
 #include "pointlist.h"
+#include "gradient.h"
 
-struct PointList Gosper_Create(float2 start, float2 start_dir, float step_length, short recursion_level);
+struct PointList Gosper_Create(float2 start, float2 start_dir, float step_length, float path_width, short recursion_level);
 
 /**
  * @brief Draws the curve.
  * @param points The points of curve
  * @param amount How many segments to draw. 3.5 draws 3 full and a half segment
+ * @return The point that was drawn last
  */
-void Gosper_Draw(struct PointList* points, float amount);
+float2 Gosper_Draw(struct PointList* points, struct Gradient* gradient, float amount);
 
 void Gosper_A(struct PointList* points, short recursion_level);
 void Gosper_B(struct PointList* points, short recursion_level);

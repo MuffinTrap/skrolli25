@@ -40,7 +40,7 @@ void GradientTexture_DrawTexture(struct GradientTexture* texture, float scale);
  * @param offset Offset to the starting point of gradient. Values over 1.0 will ping-pong loop the gradient if repeats is < 1.0f
  * @param repeats How many times to repeat the gradient
  */
-void GradientTexture_DrawGradient(struct Gradient* gradient, enum GradientAlphaMode alphamode, float offset, float repeats);
+void GradientTexture_DrawGradient(struct Gradient* gradient, enum GradientAlphaMode alphamode, float size, float offset, float repeats);
 
 
 
