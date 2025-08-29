@@ -618,17 +618,23 @@ void fx_flake_tunnel()
 
 void fx_flake_wheel()
 {
-
+	start_frame_2D();
 	glPushMatrix();
 
-	float2 center = {ctoy_frame_buffer_width()/2, ctoy_frame_buffer_height()/2};
-	//glTranslatef(center.x/8, center.y/8, 0.0f);
-	//glRotatef(ctoy_get_time()*60.0f, 0.0f, 0.0f, 1.0f);
+	glTranslatef(
+		center_x + get_from_rocket(track_translate_x),
+		center_y + get_from_rocket(track_translate_y),
+		get_from_rocket(track_translate_z)
+	);
+	float2 center = {0.0f, 0.0f};
 	float time = ctoy_get_time();
 	flake_wheel_fx(center,
 				   420.0f + sin(time*2)*120.0f,
 				   240.0f + sin(time*4)*100.0f,
-				   sin(ctoy_get_time()/20) * 80, sin(ctoy_get_time()/50) * -50, ctoy_get_time() *40, &rotation_outer, &flake.recursive_list, &wheel_list );
+				   sin(ctoy_get_time()/20) * 80, sin(ctoy_get_time()/50) * -50, ctoy_get_time() *40,
+				   select_gradient(),
+				get_from_rocket(track_gradient_offset),
+				   &rotation_outer, &flake.recursive_list, &wheel_list );
 	glPopMatrix();
 }
 

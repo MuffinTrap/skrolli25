@@ -139,7 +139,7 @@ void draw_snowflake(float2 center, float radius, short recursion, float angle, f
     store_snowflake(center, radius, recursion, angle, ratio, extrusion, recursive_list);
     glBegin(GL_TRIANGLES);
     PointList_glVertex2f(recursive_list);
-    screenprintf("Koch flake: %d vertices", recursive_list->used_size);
+    //screenprintf("Koch flake: %d vertices", recursive_list->used_size);
 
     glEnd();
 }

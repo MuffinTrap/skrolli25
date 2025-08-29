@@ -6,15 +6,21 @@
 #include <opengl_include.h>
 #include "../Ziz/screenprint.h"
 
-void flake_wheel_fx(float2 center, float shape_radius, float pattern_radius,
-                    float shape_rotation_deg, float pattern_rotation_deg,
+void flake_wheel_fx(float2 center, float shape_radius,
+                    float pattern_radius,
+                    float shape_rotation_deg,
+                    float pattern_rotation_deg,
                     float time,
-                    PointList* cornerlist, PointList* recursive_list, PointList* local_list)
+                    struct Gradient* gradient,
+                    float color_stop,
+                    PointList* cornerlist,
+                    PointList* recursive_list, PointList* local_list)
 {
     float2 zero2 = {0.0f, 0.0f};
     short recursion = 2;
     cornerlist = get_corners(center, 6, pattern_radius, pattern_rotation_deg + time/2, cornerlist);
-    screenprintf("%.1f, %.1f\n", center.x, center.y);
+    //screenprintf("%.1f, %.1f\n", center.x, center.y);
+    Gradient_glColor(gradient, color_stop);
     for (int i = 0; i < 6; i++)
     {
         PointList_clear(local_list);
@@ -34,7 +40,6 @@ void flake_wheel_fx(float2 center, float shape_radius, float pattern_radius,
                 hexpoints[p].y,
                 0.0f);
             glRotatef(shape_rotation_deg+time, 0.0f, 0.0f, 1.0f);
-            glColor3f(0.7f + cos(time * (p+i)/40)*0.5f, 0.6f + sin(time/(p-i*2)/10) * 0.3f, 0.2f + sin(time/30)*0.15f);
             draw_snowflake(zero2, shape_radius/6.0f, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list);
             glPopMatrix();
         }
