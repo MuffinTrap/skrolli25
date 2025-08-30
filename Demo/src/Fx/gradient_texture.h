@@ -26,7 +26,7 @@ struct GradientTexture GradientTexture_Create(GLuint gl_texture_name, int ziz_te
 /**
  * @brief Draws both the texture and gradient. Uses the given AlphaMode
  */
-void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* gradient, float texture_size, float gradient_size, float gradient_offset, float gradient_repeat);
+void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* gradient, float texture_size, float gradient_size, float gradient_offset);
 
 /**
  * @brief Draws only the texture using alphamode
@@ -36,11 +36,10 @@ void GradientTexture_DrawTexture(struct GradientTexture* texture, float scale);
 /**
  * @brief Draws only the gradient. Texture should be drawn before or after, depending on alphamode
  * @param gradient The gradient
- * @param alpahmode The mode the texture was/will be drawn in
- * @param offset Offset to the starting point of gradient. Values over 1.0 will ping-pong loop the gradient if repeats is < 1.0f
+ * @param alphamode The mode the texture was/will be drawn in
  * @param repeats How many times to repeat the gradient
  */
-void GradientTexture_DrawGradient(struct Gradient* gradient, enum GradientAlphaMode alphamode, float size, float offset, float repeats);
+void GradientTexture_DrawGradient(struct Gradient* gradient, enum GradientAlphaMode alphamode, float size, float offset);
 
 
 

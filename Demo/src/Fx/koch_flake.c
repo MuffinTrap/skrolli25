@@ -5,6 +5,7 @@
 #include <math.h>
 #include <m_float2_math.h>
 #include <opengl_include.h>
+#include <wii_memory_functions.h>
 #include "../Ziz/screenprint.h"
 
 /**
@@ -163,6 +164,7 @@ void KochFlake_WriteToMesh(struct KochFlake* flake, struct Mesh* mesh)
         mesh->positions[float_index+1] = p.y;
         mesh->positions[float_index+2] = 0.0f;
     }
+    FlushGPUCache(mesh->positions, mesh->allocated_vertex_count * sizeof(float) * 3);
 }
 
 struct KochFlake KochFlake_CreateDefault(short recursion_level)
@@ -195,7 +197,7 @@ struct KochFlake KochFlake_CreateDefault(short recursion_level)
 
     float2 zero = {0.0f, 0.0f};
     flake.center = zero;
-    flake.radius = 1.0f;
+    flake.radius = 0.5f;
     flake.recursion_level = 5;
     flake.angle = 60;
     flake.ratio = 1.0f/3.0f;

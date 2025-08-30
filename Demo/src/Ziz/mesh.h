@@ -1,6 +1,14 @@
 #ifndef MESH_H
 #define MESH_H
 
+enum MeshDrawMode
+{
+    DrawPoints,
+    DrawLines,
+    DrawTriangles,
+    DrawMatcap
+};
+
 struct Mesh
 {
     float* positions;
@@ -21,9 +29,11 @@ enum VertexAttribute
 
 struct Mesh Mesh_CreateEmpty(void);
 
+void Mesh_PrintInfo(struct Mesh* mesh);
 void Mesh_Allocate(struct Mesh* mesh, int vertex_count, int attribute_bitfield);
 
-void Mesh_DrawArrays(struct Mesh* mesh);
+void Mesh_DrawElements(struct Mesh* mesh, enum MeshDrawMode mode);
+void Mesh_DrawArrays(struct Mesh* mesh, enum MeshDrawMode mode);
 
 
 #endif

@@ -1,8 +1,11 @@
 //#define CGLTF_IMPLEMENTATION
 #include "ObjModel.h"
+#include <wii_memory_functions.h>
 
-#define CGLTF_IMPLEMENTATION
-#include <cgltf.h>
+#ifndef CGLTF_IMPLEMENTATION
+    #define CGLTF_IMPLEMENTATION
+    #include <cgltf.h>
+#endif
 
 #define MAX_MODELS 64
 
@@ -42,7 +45,7 @@ int load_gltf(const char* path, const char* name) {
     }
     if (model_count >= MAX_MODELS) {
         fprintf(stderr, "Model limit reached\n");
-        return -1;
+        return OBJ_MODEL_LIMIT_REACHED;
     }
     models[model_count] = model64_load(path);
     return model_count++;
@@ -50,44 +53,44 @@ int load_gltf(const char* path, const char* name) {
 
     if (model_count >= MAX_MODELS) {
         fprintf(stderr, "Model limit reached\n");
-        return -1;
+        return OBJ_MODEL_LIMIT_REACHED;
     }
 
     cgltf_options options = {0};
-    //options.type = cgltf_file_type_gltf;
     cgltf_data* data = NULL;
     cgltf_result result = cgltf_parse_file(&options, path, &data);
     
     if (result != cgltf_result_success) {
         fprintf(stderr, "Failed to parse %s : error code %d\n", path, result);
+        int error_code = -1;
         switch(result)
         {
             case cgltf_result_success: /* NOP */ break;
-            case cgltf_result_data_too_short: printf("data too short\n"); break;
-            case cgltf_result_unknown_format: printf("unknown format\n"); break;
-            case cgltf_result_invalid_json: printf("invalid json\n"); break;
-            case cgltf_result_invalid_gltf: printf("invalid gltf\n"); break;
-            case cgltf_result_invalid_options: printf("invalid options\n"); break;
-            case cgltf_result_file_not_found: printf("file not found\n"); break;
-            case cgltf_result_io_error: printf("io error\n"); break;
-            case cgltf_result_out_of_memory: printf("out of memory\n"); break;
-            case cgltf_result_legacy_gltf: printf("legacy gltf\n"); break;
+            case cgltf_result_data_too_short: printf("data too short\n"); error_code = OBJ_SHORT_DATA; break;
+            case cgltf_result_unknown_format: printf("unknown format\n");  error_code = OBJ_UNKNOWN_FORMAT; break;
+            case cgltf_result_invalid_json: printf("invalid json\n");  error_code = OBJ_INVALID_JSON; break;
+            case cgltf_result_invalid_gltf: printf("invalid gltf\n");  error_code = OBJ_INVALID_GLTF;break;
+            case cgltf_result_invalid_options: printf("invalid options\n");  error_code = OBJ_INVALID_OPTIONS;break;
+            case cgltf_result_file_not_found: printf("file not found\n");  error_code = OBJ_FILE_NOT_FOUND;break;
+            case cgltf_result_io_error: printf("io error\n");  error_code = OBJ_IO_ERROR;break;
+            case cgltf_result_out_of_memory: printf("out of memory\n");  error_code = OBJ_OUT_OF_MEMORY;break;
+            case cgltf_result_legacy_gltf: printf("legacy gltf\n");  error_code = OBJ_LEGACY_GLTF;break;
         }
-        return -1;
+        return error_code;
     }
 
     result = cgltf_load_buffers(&options, data, path);
     if (result != cgltf_result_success) {
         fprintf(stderr, "Failed to load buffers for %s\n", path);
         cgltf_free(data);
-        return -1;
+        return OBJ_LOAD_BUFFER_FAIL;
     }
 
     result = cgltf_validate(data);
     if (result != cgltf_result_success) {
         fprintf(stderr, "Invalid GLTF: %s\n", path);
         cgltf_free(data);
-        return -1;
+        return OBJ_GLTF_NOT_VALID;
     }
 
     // Store the loaded data
@@ -106,11 +109,7 @@ int load_gltf(const char* path, const char* name) {
 
 struct Mesh load_to_mesh(int model_index)
 {
-    struct Mesh ziz_mesh;
-    ziz_mesh.positions = NULL;
-    ziz_mesh.normals = NULL;
-    ziz_mesh.texcoords = NULL;
-    ziz_mesh.indices = NULL;
+    struct Mesh ziz_mesh = Mesh_CreateEmpty();
 
     if (model_index < 0 || model_index >= model_count) {
         fprintf(stderr, "Invalid model index: %d\n", model_index);
@@ -130,6 +129,11 @@ struct Mesh load_to_mesh(int model_index)
         printf("Error more than one mesh in model index %d\n", model_index);
         return ziz_mesh;
     }
+
+    size_t positions_bytes = 0;
+    size_t normals_bytes = 0;
+    size_t texcoords_bytes = 0;
+    size_t indices_bytes = 0;
 
     for (cgltf_size i = 0; i < data->meshes_count; i++) {
         cgltf_mesh* mesh = &data->meshes[i];
@@ -162,15 +166,22 @@ struct Mesh load_to_mesh(int model_index)
 
                 switch (attr->type) {
                     case cgltf_attribute_type_position:
-                        ziz_mesh.positions = (float*)malloc(sizeof(float) * item_count);
+                        positions_bytes = sizeof(float) * item_count;
+                        printf("Allocate %d bytes for positions\n", positions_bytes);
+                        ziz_mesh.positions = (float*)AllocateGPUMemory(positions_bytes);
+                        ziz_mesh.vertex_count = item_count / 3;
                         positions = data;
                         break;
                     case cgltf_attribute_type_normal:
-                        ziz_mesh.normals = (float*)malloc(sizeof(float) * item_count);
+                        normals_bytes = sizeof(float) * item_count;
+                        printf("Allocate %d bytes for normals\n", normals_bytes);
+                        ziz_mesh.normals = (float*)AllocateGPUMemory(normals_bytes);
                         normals = data;
                         break;
                     case cgltf_attribute_type_texcoord:
-                        ziz_mesh.texcoords = (float*)malloc(sizeof(float) * item_count);
+                        texcoords_bytes = sizeof(float) * item_count;
+                        printf("Allocate %d bytes for tex coords\n", texcoords_bytes);
+                        ziz_mesh.texcoords = (float*)AllocateGPUMemory(texcoords_bytes);
                         texcoords = data;
                         break;
                     case cgltf_attribute_type_color:
@@ -182,7 +193,7 @@ struct Mesh load_to_mesh(int model_index)
                 }
             }
 
-            // Draw elements
+            // Read elements
             if (primitive->indices) {
                 cgltf_accessor* accessor = primitive->indices;
                 if (!accessor->buffer_view || !accessor->buffer_view->buffer) {
@@ -194,14 +205,18 @@ struct Mesh load_to_mesh(int model_index)
                     type = GL_UNSIGNED_INT;
                     cgltf_size bytes_in_index = 4;
                     cgltf_size item_count = cgltf_accessor_unpack_indices(accessor, NULL, bytes_in_index, accessor->count);
-                    ziz_mesh.indices = (unsigned short*)malloc(sizeof(unsigned int) * item_count);
+                    indices_bytes = sizeof(unsigned int) * item_count;
+                    ziz_mesh.indices = (unsigned short*)AllocateGPUMemory(indices_bytes);
                     printf("ERROR Bunny has Unsigned Int indices");
                 }
                 else
                 {
                     cgltf_size bytes_in_index = 2;
                     cgltf_size item_count = cgltf_accessor_unpack_indices(accessor, NULL, bytes_in_index, accessor->count);
-                    ziz_mesh.indices = (unsigned short*)malloc(sizeof(unsigned short) * item_count);
+                    indices_bytes = sizeof(unsigned short) * item_count;
+                    printf("Allocate %d bytes for indices\n", indices_bytes);
+                    ziz_mesh.indices = (unsigned short*)AllocateGPUMemory(indices_bytes);
+                    ziz_mesh.index_count = item_count;
                 }
 
 
@@ -281,6 +296,18 @@ struct Mesh load_to_mesh(int model_index)
                 }
             }
         }
+    }
+    if (positions_bytes > 0)
+    {
+        FlushGPUCache(ziz_mesh.positions, positions_bytes );
+    }
+    if (normals_bytes > 0)
+    {
+        FlushGPUCache(ziz_mesh.normals, normals_bytes );
+    }
+    if (texcoords_bytes > 0)
+    {
+        FlushGPUCache(ziz_mesh.texcoords, texcoords_bytes );
     }
     return ziz_mesh;
 }
@@ -366,7 +393,7 @@ void draw_gltf(int model_index) {
                 }
 
                 // Draw with indices
-                glBegin(GL_TRIANGLES);
+                glBegin(GL_POINTS);
                 for (cgltf_size idx = 0; idx < accessor->count; idx++) {
                     unsigned int index;
                     if (type == GL_UNSIGNED_SHORT) {

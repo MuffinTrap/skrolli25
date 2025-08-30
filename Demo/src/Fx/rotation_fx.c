@@ -39,7 +39,7 @@ void rotation_fx(struct Mesh* flake,
                 //screenprintf("ring center %.1f %.1f\n", ringcenter.x, ringcenter.y);
                 glRotatef(progression * move_amount * -1.0f, 0.0f, 0.0f, 1.0f);
                 glScalef(size*1.5f, size*1.5f, 1.0f);
-                Mesh_DrawArrays(flake);
+                Mesh_DrawArrays(flake, DrawTriangles);
                 //draw_snowflake(zero2, size*1.5f, recursion+1, 60.0f, 1.0f/3.0f, 1.0f, recursive_list);
         glPopMatrix();
 
@@ -55,7 +55,7 @@ void rotation_fx(struct Mesh* flake,
                 glRotatef(progression * move_amount * -1.0f, 0.0f, 0.0f, 1.0f);
 
                 glScalef(size*0.5f, size*0.5f, 1.0f);
-                Mesh_DrawArrays(flake);
+                Mesh_DrawArrays(flake, DrawTriangles);
                 //draw_snowflake(zero2, size/2.0f, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list);
 
             glPopMatrix();
@@ -78,7 +78,7 @@ void rotation_fx(struct Mesh* flake,
             glPushMatrix();
             glRotatef(30.0f + progression * move_amount * -1.0f, 0.0f, 0.0f, 1.0f);
             glScalef(size, size, 1.0f);
-            Mesh_DrawArrays(flake);
+            Mesh_DrawArrays(flake, DrawTriangles);
             //draw_snowflake(zero2, size, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list);
             glPopMatrix();
 
@@ -87,7 +87,7 @@ void rotation_fx(struct Mesh* flake,
             Gradient_glColor(gradient, color_1_stop);
             glRotatef(progression*move_amount, 0.0f, 0.0f, 1.0f);
             glScalef(inner_size, inner_size, 1.0f);
-            Mesh_DrawArrays(flake);
+            Mesh_DrawArrays(flake, DrawTriangles);
             //draw_snowflake(zero2, inner_size, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list);
         glPopMatrix();
     }

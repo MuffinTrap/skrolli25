@@ -7,9 +7,12 @@
 
 void flake_wheel_fx(struct Mesh* flake,
                     float pattern_radius,
+                    float pattern_radius_outer,
                     float shape_rotation_deg,
                     float pattern_rotation_deg,
-                    float time,
+                    float pattern_rotation_deg_outer,
                     struct Gradient* gradient,
-                    float color_stop);
+                    float base_color_stop,
+                    float ring_color_offset,
+                    float shape_color_offset);
 #endif

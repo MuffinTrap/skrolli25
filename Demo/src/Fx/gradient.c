@@ -49,7 +49,7 @@ void Gradient_PushColorArray(struct Gradient* gradient, enum ColorName* colors, 
     }
 }
 
-static float lerp(float a, float b, float t)
+static float color_lerp(float a, float b, float t)
 {
     return a * (1.0f - t) + (b * t);
 }
@@ -71,6 +71,15 @@ color3 Gradient_GetColor(struct Gradient* gradient, float stop)
     short before_index = 0;
     short after_index = gradient->color_amount;
     float read_stop = 0.0f;
+
+    if (gradient->repeats > 0.0f)
+    {
+        // When repeats is 2; the gradient has been travelled twice by the time stop reaches 1.0f
+        // When repeats is 0.5; only half of the gradient has been travelled when stop reaches 1.0f
+        // If repeats is 0, only the color at 0.0 is given
+        // negative repeats work the same way
+        stop = stop * gradient->repeats;
+    }
 
     if (stop < 0.0f)
     {
@@ -131,8 +140,8 @@ color3 Gradient_GetColor(struct Gradient* gradient, float stop)
     float t = into_next/range;
 
     color3 between;
-    between.r = lerp(before->r, after->r, t);
-    between.g = lerp(before->g, after->g, t);
-    between.b = lerp(before->b, after->b, t);
+    between.r = color_lerp(before->r, after->r, t);
+    between.g = color_lerp(before->g, after->g, t);
+    between.b = color_lerp(before->b, after->b, t);
     return between;
 }

@@ -17,7 +17,8 @@ include $(DEVKITPPC)/wii_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	skrolli
 BUILD		:=	build
-SOURCES		:=	include rocket src src/Ziz src/Fx GRRLIB GRRLIB/fonts libpng libpng/pngu
+MAIN_SOURCES		:=	include rocket src src/ufbx src/Ziz src/Fx GRRLIB GRRLIB/fonts libpng libpng/pngu
+WII_SOURCES		:=	rocket GRRLIB GRRLIB/fonts libpng libpng/pngu
 DATA		:=	data  
 INCLUDES	:=
 
@@ -30,7 +31,7 @@ ZIZ_RESOURCES_INCLUDE = $(ZIZ_DIR)/ressources/include
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS	= -g -O3 -mrvl -Wall $(MACHDEP) $(INCLUDE) -DSYNC_PLAYER
+CFLAGS	= -g -O3 -mrvl -Wall $(MACHDEP) $(INCLUDE) -DSYNC_PLAYER -DUFBX_REAL_IS_FLOAT -DUFBX_LITTLE_ENDIAN=0
 CXXFLAGS	=	$(CFLAGS)
 
 LDFLAGS	=	-g $(MACHDEP) -mrvl -Wl,-Map,$(notdir $@).map
@@ -55,7 +56,8 @@ ifneq ($(BUILD),$(notdir $(CURDIR)))
 
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
 
-export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
+export VPATH	:=	$(foreach dir,$(MAIN_SOURCES),$(CURDIR)/$(dir)) \
+					$(foreach dir,$(WII_SOURCES),$(CURDIR)/$(dir)) \
 					$(foreach dir,$(DATA),$(CURDIR)/$(dir))
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
@@ -63,7 +65,8 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 #---------------------------------------------------------------------------------
 # automatically build a list of object files for our project
 #---------------------------------------------------------------------------------
-CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+CFILES		=	$(foreach dir,$(MAIN_SOURCES),$(notdir $(wildcard $(dir)/main.c)))
+CFILES		+=	$(foreach dir,$(WII_SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))

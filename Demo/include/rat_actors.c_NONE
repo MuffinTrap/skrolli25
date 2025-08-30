@@ -1,0 +1,821 @@
+/*
+ * rat_actors.c - Multi-Actor RAT Animation System
+ * 
+ * Manages multiple actors that can be assigned different RAT models and transforms
+ * Each actor can be controlled independently via rocket values
+ * Supports dynamic switching of models and transforms per actor
+ */
+
+// Define this to enable profiler function declarations in animation.h
+#define N64_PROFILER_IMPLEMENTATION
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <stdbool.h>
+#include <rat_types.h>
+
+#ifndef N64
+#include <ctoy.h>
+#include <math.h>
+#include <stdlib.h>
+#include <opengl_include.h>
+#include "display.h"      
+#include <stdio.h>  
+#else 
+#include "ctoy.h"    
+#include <libdragon.h>
+#include <GL/gl.h> 
+#include <GL/glu.h>
+#include <GL/gl_integration.h>
+#endif
+
+// Maximum supported actors and transforms
+#define MAX_ACTORS 3
+#define MAX_RAT_MODELS 128
+#define MAX_TRANSFORMS 128
+
+// Texture ID constant (should match texture.c)
+#define INVALID_TEXTURE_ID -1
+
+void audio_poll(void);
+// Named transform preset
+typedef struct {
+    char name[MAX_NAME_LENGTH];
+    float position[3];    // x, y, z position
+    float rotation[3];    // x, y, z rotation (in radians)
+    float scale[3];       // x, y, z scale factors
+    bool is_valid;
+} RatTransformPreset;
+
+// N64 Cache-Optimized RAT model definition - 64 bytes (2 cache lines)
+typedef struct {
+    // === HOT DATA - First 32 bytes (cache line 1) ===
+    RatModel* model __attribute__((aligned(32)));  // 8 bytes - most frequently accessed
+    bool is_loaded;                                 // 1 byte
+    bool use_alpha_blend;                          // 1 byte  
+    char name[MAX_NAME_LENGTH];                    // 128 bytes - frequently accessed for lookup
+    uint8_t padding1[MAX_NAME_LENGTH - 126];       // Padding to align to cache boundaries
+    
+    // === COLD DATA - Separate allocation to avoid cache pollution ===
+    char rat_file_path[256];                       // Only used during loading
+    char texture_path[256];                        // Only used during loading
+} __attribute__((aligned(32))) RatModelDef;
+
+// N64 Cache-Optimized Actor instance - 64 bytes (2 cache lines)
+typedef struct {
+    // === HOT DATA - First 32 bytes (cache line 1) ===
+    float position[3] __attribute__((aligned(32))); // 12 bytes - accessed every frame
+    int current_model_index;                        // 4 bytes - accessed every frame
+    uint32_t current_frame;                         // 4 bytes - accessed every frame
+    bool is_active;                                 // 1 byte - checked every frame
+    bool bilinear_filtering;                        // 1 byte - used during rendering
+    uint8_t padding1[10];                           // 10 bytes padding = 32 total
+    
+    // === WARM DATA - Second 32 bytes (cache line 2) ===
+    float scale[3];                                 // 12 bytes - used during rendering
+    float rotation[3];                              // 12 bytes - used during rendering
+    uint8_t padding2[8];                            // 8 bytes padding = 32 total
+} __attribute__((aligned(32))) RatActor;
+
+// Global state
+static RatModelDef actor_models[MAX_RAT_MODELS];
+static RatTransformPreset transform_presets[MAX_TRANSFORMS];
+static RatActor actors[MAX_ACTORS];
+static int num_models = 0;
+static int num_transforms = 0;
+static bool rat_actors_initialized = false;
+
+// Global counter for faces drawn (for performance monitoring)
+int rat_actors_faces_drawn = 0;
+
+void rat_actors_render_actor(int actor_id);
+// --- Initialization ---
+
+void rat_actors_init(void) {
+    if (rat_actors_initialized) return;
+    
+    // Initialize arrays
+    memset(actor_models, 0, sizeof(actor_models));
+    memset(transform_presets, 0, sizeof(transform_presets));
+    memset(actors, 0, sizeof(actors));
+    
+    
+    
+    // Initialize actors as active with default transforms
+    for (int i = 0; i < MAX_ACTORS; i++) {
+        actors[i].is_active = true;
+        actors[i].current_model_index = 0;
+        actors[i].position[0] = 0.0f; actors[i].position[1] = 0.0f; actors[i].position[2] = 0.0f;
+        actors[i].scale[0] = 0.2f; actors[i].scale[1] = 0.2f; actors[i].scale[2] = 0.2f;
+        actors[i].rotation[0] = 0.0f; actors[i].rotation[1] = 0.0f; actors[i].rotation[2] = 0.0f;
+        actors[i].current_frame = 0;
+        actors[i].bilinear_filtering = true;
+    }
+    
+    num_models = 0;
+    num_transforms = 0;
+    rat_actors_initialized = true;
+    
+    printf("RAT Actors: Initialized with %d actors, %d model slots, %d transform slots\n", 
+           MAX_ACTORS, MAX_RAT_MODELS, MAX_TRANSFORMS);
+}
+
+void rat_actors_cleanup(void) {
+    if (!rat_actors_initialized) return;
+    
+    // Unload all models
+    for (int i = 0; i < num_models; i++) {
+        if (actor_models[i].is_loaded && actor_models[i].model) {
+            rat_model_destroy(actor_models[i].model);
+            actor_models[i].model = NULL;
+            actor_models[i].is_loaded = false;
+        }
+    }
+    
+    num_models = 0;
+    num_transforms = 0;
+    rat_actors_initialized = false;
+    
+    printf("RAT Actors: Cleaned up\n");
+}
+
+// Function to selectively cleanup a specific model based on rocket control 
+void rat_actors_selective_cleanup(void) {
+    if (!rat_actors_initialized) return;
+    #ifndef N64
+    return;
+    #endif
+    // Get the model index to cleanup from rocket
+    
+    // Validate the index
+    if (cleanup_index < 0 || cleanup_index >= num_models) {
+        return; // Invalid index, do nothing
+    }
+    
+    RatModelDef* model_def = &actor_models[cleanup_index];
+    
+    // Check if model is loaded and needs cleanup
+    if (!model_def->is_loaded || !model_def->model) {
+        return; // Model already unloaded
+    }
+    
+    // Check if any active actors are using this model
+    bool model_in_use = false;
+    for (int i = 0; i < MAX_ACTORS; i++) {
+        if (actors[i].is_active && actors[i].current_model_index == cleanup_index) {
+            model_in_use = true;
+            // Deactivate actors using this model to prevent crashes
+            actors[i].is_active = false;
+        }
+    }
+    
+    // Unload the specific model
+    rat_model_destroy(model_def->model);
+    model_def->model = NULL;
+    model_def->is_loaded = false;
+    
+    #ifdef N64
+        audio_poll();
+    #endif
+
+    // Clear the model name and paths
+    memset(model_def->name, 0, sizeof(model_def->name));
+    memset(model_def->rat_file_path, 0, sizeof(model_def->rat_file_path));
+    memset(model_def->texture_path, 0, sizeof(model_def->texture_path));
+    
+}
+
+// --- Model Management ---
+
+int rat_actors_add_model(const char* name, const char* rat_file, const char* texture_file, bool use_alpha_blend) {
+    if (!rat_actors_initialized) {
+        rat_actors_init();
+    }
+    
+    if (num_models >= MAX_RAT_MODELS) {
+        printf("RAT Actors: Cannot add model '%s' - maximum reached (%d)\n", name, MAX_RAT_MODELS);
+        return -1;
+    }
+    
+    RatModelDef* model_def = &actor_models[num_models];
+    
+    // Set up model definition
+    strncpy(model_def->name, name, MAX_NAME_LENGTH - 1);
+    model_def->name[MAX_NAME_LENGTH - 1] = '\0';
+    
+    strncpy(model_def->rat_file_path, rat_file, sizeof(model_def->rat_file_path) - 1);
+    model_def->rat_file_path[sizeof(model_def->rat_file_path) - 1] = '\0';
+    
+    if (texture_file) {
+        strncpy(model_def->texture_path, texture_file, sizeof(model_def->texture_path) - 1);
+        model_def->texture_path[sizeof(model_def->texture_path) - 1] = '\0';
+    } else {
+        model_def->texture_path[0] = '\0';
+    }
+    
+    // Store alpha blend preference
+    model_def->use_alpha_blend = use_alpha_blend;
+    
+    // Load the model
+    char model_instance_name[MAX_NAME_LENGTH + 16];
+    snprintf(model_instance_name, sizeof(model_instance_name), "actor_model_%d", num_models);
+    
+    model_def->model = rat_model_create(model_instance_name, rat_file, texture_file);
+#ifdef GEKKO
+    mgdl_CacheFlushRange(model_def, sizeof(RatModelDef));
+#endif
+    if (model_def->model) {
+        model_def->is_loaded = true;
+        printf("RAT Actors: Added model %d: '%s' from '%s' (alpha blend: %s)\n", 
+               num_models, name, rat_file, use_alpha_blend ? "enabled" : "disabled");
+        return num_models++;
+    } else {
+        printf("RAT Actors: Failed to load model '%s' from '%s'\n", name, rat_file);
+        return -1;
+    }
+}
+
+// --- Transform Management ---
+
+int rat_actors_add_transform(const char* name, float px, float py, float pz, 
+                            float rx, float ry, float rz, float sx, float sy, float sz) {
+    if (!rat_actors_initialized) {
+        rat_actors_init();
+    }
+    
+    if (num_transforms >= MAX_TRANSFORMS) {
+        printf("RAT Actors: Cannot add transform '%s' - maximum reached (%d)\n", name, MAX_TRANSFORMS);
+        return -1;
+    }
+    
+    RatTransformPreset* preset = &transform_presets[num_transforms];
+    
+    strncpy(preset->name, name, MAX_NAME_LENGTH - 1);
+    preset->name[MAX_NAME_LENGTH - 1] = '\0';
+    
+    preset->position[0] = px;
+    preset->position[1] = py;
+    preset->position[2] = pz;
+    
+    preset->rotation[0] = rx;
+    preset->rotation[1] = ry;
+    preset->rotation[2] = rz;
+    
+    preset->scale[0] = sx;
+    preset->scale[1] = sy;
+    preset->scale[2] = sz;
+    
+    preset->is_valid = true;
+    
+    printf("RAT Actors: Added transform %d: '%s' pos(%.2f,%.2f,%.2f) rot(%.2f,%.2f,%.2f) scale(%.2f,%.2f,%.2f)\n", 
+           num_transforms, name, px, py, pz, rx, ry, rz, sx, sy, sz);
+    
+    return num_transforms++;
+}
+
+int rat_actors_add_transform_uniform_scale(const char* name, float px, float py, float pz, 
+                                          float rx, float ry, float rz, float scale) {
+    return rat_actors_add_transform(name, px, py, pz, rx, ry, rz, scale, scale, scale);
+}
+
+// --- Actor Control ---
+
+void rat_actors_update(void) {
+    if (!rat_actors_initialized) return;
+    
+    // Check for selective model cleanup request
+    rat_actors_selective_cleanup();
+    
+}
+
+void rat_actors_update_models(void); // Forward declaration
+
+void rat_actors_render_all(void) {
+    if (!rat_actors_initialized) return;
+    
+    // Reset global OpenGL state cache to ensure fresh start for multi-model rendering
+    rat_reset_opengl_state_cache(NULL);
+    
+    // Reset face counter for this frame
+    rat_actors_faces_drawn = 0;
+    
+    for (int actor_id = 0; actor_id < MAX_ACTORS; actor_id++) {
+        rat_actors_render_actor(actor_id);
+    }
+
+}
+
+// Function declarations for frustum culling
+extern int SphereInFrustum(float x, float y, float z, float radius);
+extern void ExtractFrustum(float cameraPosition[3], float cameraLookAt[3], float cameraUp[3], float fov, float aspect, float near, float far);
+
+// Update frustum with current camera parameters
+static void update_rat_frustum(float cam_x, float cam_y, float cam_z, float cam_yaw, float cam_pitch, float fov, float aspect, float near, float far) {
+    // Calculate camera position and look-at point
+    float camera_pos[3] = {cam_x, cam_y, cam_z};
+    float camera_look[3] = {
+        cam_x + sinf(cam_yaw) * cosf(cam_pitch),
+        cam_y + sinf(cam_pitch),
+        cam_z + cosf(cam_yaw) * cosf(cam_pitch)
+    };
+    float camera_up[3] = {0.0f, 1.0f, 0.0f};
+    
+    // Extract frustum planes
+    ExtractFrustum(camera_pos, camera_look, camera_up, fov, aspect, near, far);
+}
+
+// Camera parameters for frustum culling
+static float rat_actors_cam_x = 0.0f, rat_actors_cam_y = 0.0f, rat_actors_cam_z = 0.0f;
+static float rat_actors_cam_yaw = 0.0f, rat_actors_cam_pitch = 0.0f;
+static float rat_actors_fov = 45.0f, rat_actors_aspect = 1.0f;
+static float rat_actors_near = 0.1f, rat_actors_far = 100.0f;
+static bool rat_actors_frustum_updated = false;
+
+// Function to set camera parameters for frustum culling
+void rat_actors_set_camera_params(float cam_x, float cam_y, float cam_z, float cam_yaw, float cam_pitch, 
+                                  float fov, float aspect, float near, float far) {
+    rat_actors_cam_x = cam_x;
+    rat_actors_cam_y = cam_y;
+    rat_actors_cam_z = cam_z;
+    rat_actors_cam_yaw = cam_yaw;
+    rat_actors_cam_pitch = cam_pitch;
+    rat_actors_fov = fov;
+    rat_actors_aspect = aspect;
+    rat_actors_near = near;
+    rat_actors_far = far;
+    
+    // Update frustum with these parameters
+    update_rat_frustum(cam_x, cam_y, cam_z, cam_yaw, cam_pitch, fov, aspect, near, far);
+    rat_actors_frustum_updated = true;
+}
+
+// Calculate approximate bounding sphere radius for a RAT model
+static float calculate_model_bounding_radius(RatModel* model) {
+    if (!model || !rat_model_is_valid(model)) {
+        return 1.0f; // Default radius
+    }
+    
+    // Get model bounds from rat_handler's anim_info
+    if (!model->anim_info) {
+        return 1.0f; // Default if no animation info
+    }
+    
+    // Calculate the radius from the bounding box
+    float width = model->anim_info->max_x - model->anim_info->min_x;
+    float height = model->anim_info->max_y - model->anim_info->min_y;
+    float depth = model->anim_info->max_z - model->anim_info->min_z;
+    
+    // Calculate the radius as half the diagonal of the bounding box
+    float radius = sqrtf(width * width + height * height + depth * depth) * 0.5f;
+    
+    // Ensure we have a minimum radius for very small models 
+    if (radius < 0.1f) {
+        radius = 0.5f; // Minimum reasonable radius
+    }
+    
+    return radius;
+}
+// Check if actor should be culled using the new frustum system
+static bool should_cull_rat_actor(RatActor* actor, RatModelDef* model_def, float cam_x, float cam_y, float cam_z, float cam_yaw, float cam_pitch) {
+
+    // Check if any scale component is zero or very close to zero
+    const float MIN_SCALE = 0.001f;
+    if (fabsf(actor->scale[0]) < MIN_SCALE || 
+        fabsf(actor->scale[1]) < MIN_SCALE || 
+        fabsf(actor->scale[2]) < MIN_SCALE) {
+        return true; // Cull actors with zero/tiny scale 
+    }
+    
+    // Calculate bounding sphere radius including scale and animation frame effects
+    float base_radius = calculate_model_bounding_radius(model_def->model);
+    float max_scale = fabs(actor->scale[0]);
+    max_scale = fmax(max_scale, fabs(actor->scale[1]));
+    max_scale = fmax(max_scale, fabs(actor->scale[2]));
+    
+    // Account for animation frame effects on bounding radius
+    float animation_multiplier = 1.0f;
+    if (model_def->model && rat_model_is_valid(model_def->model)) {
+        uint32_t total_frames = rat_model_get_total_frames(model_def->model);
+        if (total_frames > 1) {
+            // For animated models, increase bounding radius to account for frame-to-frame variation
+            // Different animation frames may extend beyond the static bounds
+            animation_multiplier = 1.3f; // 30% larger radius for animated models
+            
+            // Additional frame-dependent variation for high-frame-count animations
+            if (total_frames > 10) {
+                // Use current frame to add slight variation (simulates frame-specific bounds)
+                float frame_ratio = (float)(actor->current_frame % total_frames) / total_frames;
+                float frame_variation = 0.1f * sinf(frame_ratio * 2.0f * M_PI); // ±10% variation
+                animation_multiplier += frame_variation;
+            }
+        }
+    }
+    
+    // Apply conservative scaling - use larger base multiplier to reduce false culling
+    float scaled_radius = base_radius * max_scale * animation_multiplier * 12.0f;
+    
+    // Ensure minimum radius for very small models
+    if (scaled_radius < 1.0f) {
+        scaled_radius = 1.0f;
+    }
+    
+    // Debug output if enabled via rocket control
+    bool debug_enabled = false;
+    
+    // Test frustum culling using the new system
+    if (!SphereInFrustum(actor->position[0], actor->position[1], actor->position[2], scaled_radius)) {
+#ifndef N64
+        if (debug_enabled) {
+            printf("RAT Actor %d: CULLED (outside frustum)\n", actor->current_model_index);
+        }
+#endif
+        return true; // Cull - outside frustum
+    }
+
+#ifndef N64
+    if (debug_enabled) {
+        printf("RAT Actor %d: VISIBLE\n", actor->current_model_index);
+    }
+#endif
+    
+    return false; // Don't cull
+}
+
+// Forward declarations
+extern int rat_actors_faces_drawn;
+
+// Forward declaration for the triangle count function
+uint32_t rat_model_get_triangle_count(RatModel* model);
+
+// Function to safely get the triangle count from a RAT model
+// Returns the number of triangles (faces) in the model, or 0 if unable to determine
+static uint32_t get_rat_model_triangle_count(RatModel* model) {
+    if (rat_model_is_valid(model) == false) {
+        return 0;
+    }
+    
+    // Use the new API function from rat_handler to get accurate triangle count
+    return rat_model_get_triangle_count(model);
+}
+
+
+#ifdef N64
+void audio_poll(void);
+#endif
+void rat_actors_render_actor(int actor_id) {
+    if (!rat_actors_initialized || actor_id < 0 || actor_id >= MAX_ACTORS) {
+        return;
+    }
+    
+    RatActor* actor = &actors[actor_id];
+
+    if (!actor->is_active) {
+        return;
+    }
+
+    // Validate model index
+    if (actor->current_model_index >= num_models) {
+        return;
+    }
+    
+    RatModelDef* model_def = &actor_models[actor->current_model_index];
+    
+    if (!model_def->is_loaded || !model_def->model) {
+        return;
+    }
+    
+    // Check if actor should be culled using the new frustum system
+    if (rat_actors_frustum_updated && should_cull_rat_actor(actor, model_def, 
+                                                           rat_actors_cam_x, rat_actors_cam_y, rat_actors_cam_z, 
+                                                           rat_actors_cam_yaw, rat_actors_cam_pitch)) {
+        return; // Skip drawing this actor
+    }
+    
+    // Apply transform to model from actor's direct values
+    rat_model_set_position(model_def->model, 
+                          actor->position[0], 
+                          actor->position[1], 
+                          actor->position[2]);
+    
+    rat_model_set_rotation(model_def->model, 
+                          actor->rotation[0], 
+                          actor->rotation[1], 
+                          actor->rotation[2]);
+    
+    rat_model_set_scale(model_def->model, 
+                       actor->scale[0], 
+                       actor->scale[1], 
+                       actor->scale[2]);
+    
+    // Set texture filtering and blending based on model's settings
+    if (model_def->model->texture_id != INVALID_TEXTURE_ID) {
+        // Configure alpha blending based on model definition
+        if (model_def->use_alpha_blend) {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            // Show vertex color when texture is transparent
+            glEnable(GL_ALPHA_TEST);
+            glAlphaFunc(GL_GREATER, 0.675f);
+        } else {
+            glDisable(GL_BLEND);
+            glDisable(GL_ALPHA_TEST);
+        }
+        
+        bind_texture(model_def->model->texture_id);
+        if (actor->bilinear_filtering) {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        } else {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        }
+    } else {
+        // No texture - disable blending
+        glDisable(GL_BLEND);
+        glDisable(GL_ALPHA_TEST);
+        
+        // Debug: Print when no texture is available
+        static int debug_no_texture_count = 0;
+        if (debug_no_texture_count < 20) {
+            printf("RAT Actor %d has no texture (texture_id: %d)\n", actor_id, model_def->model->texture_id);
+            debug_no_texture_count++;
+        }
+    }
+        
+    // Render the model 
+    rat_model_render(model_def->model);
+    #ifdef N64
+        audio_poll();
+    #endif
+    
+    // Count faces for performance monitoring
+    if (model_def->model && model_def->model->context) {
+        uint32_t triangle_count = rat_get_triangle_count(model_def->model->context);
+        rat_actors_faces_drawn += triangle_count;
+    }
+}
+
+void rat_actors_update_models(void) {
+    if (!rat_actors_initialized) return;
+
+    // Round-robin decompression: only update one actor per frame to spread the load
+    static int current_actor_index = 0;
+    static int attempts = 0;
+    
+    // Try to find an actor that needs decompression, starting from current_actor_index
+    int max_attempts = MAX_ACTORS; // Prevent infinite loops
+    bool found_actor_to_update = false;
+    
+    for (attempts = 0; attempts < max_attempts; attempts++) {
+        int actor_id = (current_actor_index + attempts) % MAX_ACTORS;
+        RatActor* actor = &actors[actor_id];
+        
+        if (!actor->is_active) {
+            continue;
+        }
+
+        // Validate model index
+        if (actor->current_model_index >= num_models) {
+            continue;
+        }
+        
+        RatModelDef* model_def = &actor_models[actor->current_model_index];
+        
+        if (!model_def->is_loaded || !model_def->model) {
+            continue;
+        }
+
+        // Check if this actor actually needs decompression
+        if (rat_model_is_valid(model_def->model)) {
+            uint32_t total_frames = rat_model_get_total_frames(model_def->model);
+            if (total_frames > 0) {
+                uint32_t target_frame = actor->current_frame % total_frames;
+                uint32_t current_model_frame = rat_model_get_frame(model_def->model);
+                
+                // Only decompress if the frame actually changed
+                if (target_frame != current_model_frame) {
+                    rat_model_update(model_def->model, target_frame);
+                    found_actor_to_update = true;
+                    break; // Only update one actor per frame
+                }
+                // If frame hasn't changed, this actor doesn't need decompression
+            }
+        }
+    }
+    
+    // Move to next actor for next frame
+    current_actor_index = (current_actor_index + 1) % MAX_ACTORS;
+    
+}
+
+// --- Frustum Culling ---
+
+// --- Utility Functions ---
+
+void rat_actors_set_actor_active(int actor_id, bool active) {
+    if (actor_id >= 0 && actor_id < MAX_ACTORS) {
+        actors[actor_id].is_active = active;
+        printf("RAT Actors: Actor %d %s\n", actor_id, active ? "activated" : "deactivated");
+    }
+}
+
+bool rat_actors_is_actor_active(int actor_id) {
+    if (actor_id >= 0 && actor_id < MAX_ACTORS) {
+        return actors[actor_id].is_active;
+    }
+    return false;
+}
+
+void rat_actors_print_info(void) {
+    #ifdef N64
+    return;
+    #endif
+    printf("\n=== RAT Actors System ===\n");
+    printf("Models: %d/%d\n", num_models, MAX_RAT_MODELS);
+    
+    for (int i = 0; i < num_models; i++) {
+        printf("  [%d] %s - %s (%s)\n", 
+               i, actor_models[i].name, actor_models[i].rat_file_path,
+               actor_models[i].is_loaded ? "loaded" : "failed");
+    }
+    
+    printf("Transforms: %d/%d\n", num_transforms, MAX_TRANSFORMS);
+    
+    for (int i = 0; i < num_transforms; i++) {
+        RatTransformPreset* t = &transform_presets[i];
+        printf("  [%d] %s - pos(%.2f,%.2f,%.2f) rot(%.2f,%.2f,%.2f) scale(%.2f,%.2f,%.2f)\n", 
+               i, t->name, t->position[0], t->position[1], t->position[2],
+               t->rotation[0], t->rotation[1], t->rotation[2],
+               t->scale[0], t->scale[1], t->scale[2]);
+    }
+    
+    printf("Actors: %d\n", MAX_ACTORS);
+    
+    for (int i = 0; i < MAX_ACTORS; i++) {
+        RatActor* a = &actors[i];
+        printf("  [%d] %s - model:%d pos(%.2f,%.2f,%.2f) scale(%.2f,%.2f,%.2f) rot(%.2f,%.2f,%.2f) frame:%d bilinear:%s\n", 
+               i, a->is_active ? "active" : "inactive",
+               a->current_model_index, 
+               a->position[0], a->position[1], a->position[2],
+               a->scale[0], a->scale[1], a->scale[2],
+               a->rotation[0], a->rotation[1], a->rotation[2],
+               a->current_frame,
+               a->bilinear_filtering ? "on" : "off");
+    }
+    
+    printf("=========================\n\n");
+}
+
+// --- Quick Setup Functions ---
+
+
+
+int rat_actors_get_model_count(void) {
+    return num_models;
+}
+
+int rat_actors_get_transform_count(void) { 
+    return num_transforms;
+}
+
+const char* rat_actors_get_model_name(int index) {
+    if (index >= 0 && index < num_models) {
+        return actor_models[index].name;
+    }
+    return NULL;
+}
+
+const char* rat_actors_get_transform_name(int index) {
+    if (index >= 0 && index < num_transforms) {
+        return transform_presets[index].name;
+    }
+    return NULL;
+}
+
+// --- Far Clip Calculation Support ---
+
+// Get the maximum distance from camera to any active actor's bounds
+float rat_actors_get_max_distance_from_camera(float camera_x, float camera_y, float camera_z) {
+    // Check EMU Z-buffer state - if Z-buffer is disabled, RAT actors don't affect far clip
+    
+    float max_distance = 0.0f;
+    
+    for (int i = 0; i < MAX_ACTORS; i++) {
+        RatActor* actor = &actors[i];
+
+        if (!actor->is_active) continue;
+        
+        // Get the model for this actor
+        if (actor->current_model_index < 0 || actor->current_model_index >= num_models) continue;
+        RatModelDef* model_def = &actor_models[actor->current_model_index];
+        if (!model_def->is_loaded || !model_def->model) continue;
+        
+        // Get model bounds from rat_handler
+        RatModel* model = model_def->model;
+        if (!model->is_valid || !model->anim_info) continue;
+        
+        // Check if actor has valid scale (skip zero/tiny scale actors)
+        const float MIN_SCALE = 0.001f;
+        if (fabsf(actor->scale[0]) < MIN_SCALE || 
+            fabsf(actor->scale[1]) < MIN_SCALE || 
+            fabsf(actor->scale[2]) < MIN_SCALE) {
+            continue;
+        }
+        
+        // Calculate transformed bounding box
+        float model_min_x = model->anim_info->min_x;
+        float model_min_y = model->anim_info->min_y;
+        float model_min_z = model->anim_info->min_z;
+        float model_max_x = model->anim_info->max_x;
+        float model_max_y = model->anim_info->max_y;
+        float model_max_z = model->anim_info->max_z;
+        
+        // Apply actor's scale to the bounds
+        float scaled_min_x = model_min_x * actor->scale[0];
+        float scaled_min_y = model_min_y * actor->scale[1];
+        float scaled_min_z = model_min_z * actor->scale[2];
+        float scaled_max_x = model_max_x * actor->scale[0];
+        float scaled_max_y = model_max_y * actor->scale[1];
+        float scaled_max_z = model_max_z * actor->scale[2];
+        
+        // Handle zero scales - if scale is zero, we can't calculate bounds properly
+        if (actor->scale[0] == 0 || actor->scale[1] == 0 || actor->scale[2] == 0) {
+            continue; // Skip this actor if any scale is zero
+        }
+        
+        // Handle negative scales - swap min/max if scale is negative
+        if (actor->scale[0] < 0) {
+            float temp = scaled_min_x;
+            scaled_min_x = scaled_max_x;
+            scaled_max_x = temp;
+        }
+        if (actor->scale[1] < 0) {
+            float temp = scaled_min_y;
+            scaled_min_y = scaled_max_y;
+            scaled_max_y = temp;
+        }
+        if (actor->scale[2] < 0) {
+            float temp = scaled_min_z;
+            scaled_min_z = scaled_max_z;
+            scaled_max_z = temp;
+        }
+        
+        // Apply actor's position (translation)
+        float final_min_x = scaled_min_x + actor->position[0];
+        float final_min_y = scaled_min_y + actor->position[1];
+        float final_min_z = scaled_min_z + actor->position[2];
+        float final_max_x = scaled_max_x + actor->position[0];
+        float final_max_y = scaled_max_y + actor->position[1];
+        float final_max_z = scaled_max_z + actor->position[2];
+        
+        // Calculate distance from camera to all 8 corners of the bounding box
+        float corners[8][3] = {
+            {final_min_x, final_min_y, final_min_z},
+            {final_max_x, final_min_y, final_min_z},
+            {final_min_x, final_max_y, final_min_z},
+            {final_min_x, final_min_y, final_max_z},
+            {final_max_x, final_max_y, final_min_z},
+            {final_max_x, final_min_y, final_max_z},
+            {final_min_x, final_max_y, final_max_z},
+            {final_max_x, final_max_y, final_max_z}
+        };
+        
+        for (int j = 0; j < 8; j++) {
+            float dx = corners[j][0] - camera_x;
+            float dy = corners[j][1] - camera_y;
+            float dz = corners[j][2] - camera_z;
+            float distance = sqrtf(dx*dx + dy*dy + dz*dz);
+            if (distance > max_distance) {
+                max_distance = distance;
+            }
+        }
+    }
+    
+    return max_distance;
+}
+
+// Get information about active actors for debugging
+void rat_actors_get_active_info(int* num_active, float* max_distance_from_origin) {
+    int active_count = 0;
+    float max_dist = 0.0f;
+    
+    for (int i = 0; i < MAX_ACTORS; i++) {
+        if (actors[i].is_active) {
+            active_count++;
+            
+            // Calculate distance from origin
+            float dx = actors[i].position[0];
+            float dy = actors[i].position[1];
+            float dz = actors[i].position[2];
+            float distance = sqrtf(dx*dx + dy*dy + dz*dz);
+            if (distance > max_dist) {
+                max_dist = distance;
+            }
+        }
+    }
+    
+    if (num_active) *num_active = active_count;
+    if (max_distance_from_origin) *max_distance_from_origin = max_dist;
+}
