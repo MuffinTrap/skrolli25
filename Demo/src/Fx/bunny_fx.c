@@ -12,7 +12,7 @@ struct Bunny Bunny_Load_GLTF(const char* filename)
     {
         printf("Loading bunny to mesh\n");
         bunny.mesh = load_to_mesh(bunny.obj_id);
-        Mesh_PrintInfo(&bunny.mesh);
+        Mesh_PrintInfo(&bunny.mesh, false);
         bunny.format = Bunny_GLTF;
     }
     else
@@ -26,10 +26,30 @@ struct Bunny Bunny_Load_GLTF(const char* filename)
 struct Bunny Bunny_Load_RAT(const char* filename)
 {
     struct Bunny bunny;
+#ifdef USE_RAT_MODELS
     bunny.rat = rat_model_create("bunny_medium", "assets/bunny_medium.rat", NULL);
+#endif
 
     bunny.format = Bunny_RAT;
     return bunny;
+}
+
+struct Bunny Bunny_Load_UFBX(const char* filename)
+{
+    struct Bunny bunny;
+#   ifdef GEKKO
+    bunny.fbx_mesh = Ufbx_GetFirstMesh(filename);
+    bunny.mesh = Ufbx_LoadToMesh(bunny.fbx_mesh);
+#endif
+
+    bunny.format = Bunny_FBX;
+    return bunny;
+
+}
+
+void Bunny_Allocate_Texcoords(struct Bunny* bunny)
+{
+    Mesh_Allocate(&bunny->mesh, bunny->mesh.vertex_count, (AttributeTexcoord));
 }
 
 void Bunny_Draw_immediate(struct Bunny* bunny)
@@ -42,10 +62,19 @@ void Bunny_Draw_mesh(struct Bunny* bunny, enum MeshDrawMode draw_mode)
     switch(bunny->format)
     {
         case Bunny_GLTF:
-    Mesh_DrawElements(&bunny->mesh, draw_mode);
-    break;
+            Mesh_DrawElements(&bunny->mesh, draw_mode);
+        break;
         case Bunny_RAT:
+#           ifdef USE_RAT_MODELS
             rat_model_render(bunny->rat);
+#           endif
+            break;
+        case Bunny_FBX:
+#           ifdef GEKKO
+            Mesh_DrawArrays(&bunny->mesh, draw_mode);
+           // Ufbx_DrawMesh(bunny->ufbx_mesh);
+#           endif
+
             break;
     }
 }

@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <limits.h>
 
+//#define USE_RAT_MODELS
 
 // Headers
 #define M_MATH_IMPLEMENTATION
@@ -16,7 +17,6 @@
 #include "Ziz/screenprint.h"
 #include "Ziz/ObjModel.h"
 
-//#   include "ufbx/ufbx.h"
 #include "Fx/pointlist.h"
 #include "Fx/koch_flake.h"
 #include "Fx/rotation_fx.h"
@@ -29,15 +29,20 @@
 
 
 // Code
-#ifdef NAKKI_GEKKO
+#ifdef GEKKO
 	// Wii special things here
-#else
+#   include "ufbx/ufbx.h"
+#   include "ufbx/ufbx.c"
+#	include "Fx/ufbx_to_mesh.c"
+
+#endif
+
 // NOTE gcc compiles texture.c separately and includes stb_image.h twice
 #include <texture.c>
 #include <m_float2_math.c>
 #include <wii_memory_functions.c>
 #include <frustum_culling.c>
-#include <rat_handler.c>
+//#include <rat_handler.c>
 //#include <rat_actors.c>
 //#include "../include/glb2rat.c"
 
@@ -49,8 +54,6 @@
 #define SIZE_MAX 4
 #endif
 
-//#   include "ufbx/ufbx.c"
-//#include "Fx/ufbx_to_mesh.c"
 */
 
 #include "Ziz/mesh.c"
@@ -66,7 +69,6 @@
 #include "Fx/gradient.c"
 #include "Fx/gradient_texture.c"
 #include "Fx/gosper_curve.c"
-#endif
 
 // screen dimensions
 static float center_x;
@@ -92,11 +94,15 @@ static struct Mesh flake_mesh_recursion4;
 
 // Bunny fx
 static struct Bunny bunny_mesh;
+static struct Bunny test_mesh;
 
 // Bunny gradient
 static struct GradientTexture lost_bunny_texture;
 static struct GradientTexture falling_bunny_texture;
+static struct GradientTexture lynn_test_gs;
+static struct GradientTexture lynn_test_rgb;
 static struct GradientTexture logo_texture;
+static struct GradientTexture matcap_green_orange;
 
 // Gradients
 static struct Gradient white_gradient;
@@ -108,6 +114,16 @@ static PointList gosper_list;
 
 #include "main_rocket.h"
 
+struct GradientTexture LoadImage(const char* filename)
+{
+	int texture_id = addTexture(filename);
+	struct GradientTexture text;
+	text = GradientTexture_Create(
+		bind_texture(texture_id),
+		texture_id,
+		GradientMultiply);
+	return text;
+}
 
 void ctoy_begin(void)
 {
@@ -115,26 +131,10 @@ void ctoy_begin(void)
 	display_init(RESOLUTION_640x480, DEPTH_32_BPP, 2, GAMMA_NONE, FILTERS_DISABLED);
 
 	// Bunny pictures
-	int lost_bunny_texture_id = addTexture("assets/lost_bun.png");
-	int falling_bunny_texture_id = addTexture("assets/falling_bun.png");
-
-	int logo_texture_id = addTexture("assets/logo.png");
-
-	lost_bunny_texture = GradientTexture_Create(
-		bind_texture(lost_bunny_texture_id),
-		lost_bunny_texture_id,
-		GradientMultiply);
-
-	falling_bunny_texture = GradientTexture_Create(
-		bind_texture(falling_bunny_texture_id),
-		falling_bunny_texture_id,
-		GradientMultiply);
-
-	logo_texture = GradientTexture_Create(
-		bind_texture(logo_texture_id),
-		logo_texture_id,
-		GradientCutout
-	);
+	lost_bunny_texture = LoadImage("assets/lost_bun.png");
+	falling_bunny_texture = LoadImage("assets/falling_bun.png");
+	logo_texture = LoadImage("assets/logo.png");
+	matcap_green_orange = LoadImage("assets/matcap.png");
 
 	// Colors and gradients
 	ColorManager_LoadColors();
@@ -183,8 +183,14 @@ void ctoy_begin(void)
 	KochFlake_WriteToMesh(&flake, &flake_mesh_recursion3);
 
 	// Stanford bunny
-	bunny_mesh = Bunny_Load_GLTF("assets/bunny_medium.glb");
 	//bunny_mesh = Bunny_Load_RAT("assets/bunny_medium.glb");
+#	ifdef GEKKO
+	bunny_mesh = Bunny_Load_UFBX("assets/bunny_medium.fbx");
+#	else
+	bunny_mesh = Bunny_Load_GLTF("assets/bunny_medium.glb");
+#	endif
+	Bunny_Allocate_Texcoords(&bunny_mesh);
+	Mesh_PrintInfo(&bunny_mesh.mesh, false);
 
 	// Gosper curve
 	float2 gstart = {00.0f, 00.0f};
@@ -313,15 +319,32 @@ struct Gradient* select_gradient()
 	}
 	return grad;
 }
+struct GradientTexture* select_matcap()
+{
+	struct GradientTexture* text;
+	int texture_index = (int)get_from_rocket(track_matcap_index);
+	screenprintf("Selected matcap %d", texture_index);
+	switch(texture_index)
+	{
+		case 0: text = &matcap_green_orange; break;
+		default: text = &matcap_green_orange; break;
+	}
+	return text;
+}
 
 struct GradientTexture* select_texture()
 {
 	struct GradientTexture* text;
-	switch((int)get_from_rocket(track_bunny_index))
+	int texture_index = (int)get_from_rocket(track_bunny_index);
+	screenprintf("Selected texture %d", texture_index);
+	switch(texture_index)
 	{
 		case 0: text = &lost_bunny_texture; break;
 		case 1: text = &falling_bunny_texture; break;
 		case 2: text = &logo_texture; break;
+		case 3: text = &lynn_test_gs; break;
+		case 4: text = &lynn_test_rgb; break;
+		case 5: text = &matcap_green_orange; break;
 		default: return NULL;
 	}
 	switch((int)get_from_rocket(track_gradient_mode))
@@ -367,7 +390,6 @@ void fx_gradient_bunny()
 	short y = get_from_rocket(track_translate_y);
 	float scale = get_from_rocket(track_scale_xyz);
 	float offset = get_from_rocket(track_gradient_offset);
-	float repeat = get_from_rocket(track_gradient_repeat);
 	float gradient_size = get_from_rocket(track_gradient_size);
 	struct Gradient* grad = select_gradient();
 
@@ -375,10 +397,10 @@ void fx_gradient_bunny()
 	start_frame_2D();
 	glPushMatrix();
 
-		glTranslatef(ctoy_frame_buffer_width()/2+x, ctoy_frame_buffer_height()/2+y, 0.0f);
+		glTranslatef(center_x+x, center_x+y, 0.0f);
 		glScalef(1.0f, 1.0f, 1.0f);
 
-		GradientTexture_Draw(&lost_bunny_texture, grad, scale, gradient_size, offset);
+		GradientTexture_Draw(text, grad, scale, gradient_size, offset);
 	glPopMatrix();
 
 }
@@ -410,7 +432,7 @@ void fx_gosper_curve()
 	glPopMatrix();
 }
 
-static void draw_stanford()
+static void draw_stanford(enum MeshDrawMode drawmode)
 {
 	//start_frame_3D();
 	glTranslatef(
@@ -422,13 +444,66 @@ static void draw_stanford()
 	glRotatef(get_from_rocket(track_rotation_y), 0.0f, 1.0f, 0.0f);
 	glRotatef(get_from_rocket(track_rotation_z), 0.0f, 0.0f, 1.0f);
 
-	float scale = get_from_rocket(track_scale_xyz);
+	float scale = get_from_rocket(track_scale_xyz) * 0.990f;
 	glScalef(scale, scale, scale);
 
 	glColor3f(1.0f, 1.0f, 1.0f);
-	//Bunny_Draw_immediate(&bunny_mesh, DrawTriangles);
-	Bunny_Draw_mesh(&bunny_mesh, DrawTriangles);
+	Bunny_Draw_mesh(&bunny_mesh, drawmode);
 }
+
+static void fx_matcap_bunny()
+{
+	start_frame_3D();
+	glPushMatrix();
+	draw_stanford(DrawLines);
+	glPopMatrix();
+	glDepthFunc(GL_LESS);
+	bool cut= get_from_rocket(track_scissor_1_cut) > 0.0f;
+	if (cut)
+	{
+		glEnable(GL_SCISSOR_TEST);
+		float l = get_from_rocket(track_scissor_1_left);
+		float r = get_from_rocket(track_scissor_1_right);
+		float t = get_from_rocket(track_scissor_1_top);
+		float b = get_from_rocket(track_scissor_1_bottom);
+		glScissor(l, b, r-l, t-b );
+	}
+	glPushMatrix();
+		glTranslatef(
+			get_from_rocket(track_translate_x),
+			get_from_rocket(track_translate_y),
+			get_from_rocket(track_translate_z)
+		);
+		glRotatef(get_from_rocket(track_rotation_x), 1.0f, 0.0f, 0.0f);
+		glRotatef(get_from_rocket(track_rotation_y), 0.0f, 1.0f, 0.0f);
+		glRotatef(get_from_rocket(track_rotation_z), 0.0f, 0.0f, 1.0f);
+
+		float scale = get_from_rocket(track_scale_xyz);
+		glScalef(scale, scale, scale);
+
+		glColor3f(1.0f, 1.0f, 1.0f);
+		struct GradientTexture* material = select_matcap();
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, material->gl_texture_name);
+			struct Mesh* stfrd = &bunny_mesh.mesh;
+
+			Mesh_GenerateMatcapUVs(stfrd);
+
+
+			Mesh_EnableAttribute(stfrd, AttributeTexcoord);
+				Bunny_Draw_mesh(&bunny_mesh, DrawTriangles);
+			Mesh_DisableAttribute(stfrd, AttributeTexcoord);
+		glDisable(GL_TEXTURE_2D);
+
+	glPopMatrix();
+
+	if (cut)
+	{
+		glDisable(GL_SCISSOR_TEST);
+	}
+
+}
+
 
 void fx_stanford_bunny()
 {
@@ -496,7 +571,7 @@ void fx_stanford_bunny()
 
 	}
 
-	draw_stanford();
+	draw_stanford(DrawTriangles);
 
 	glPopMatrix();
 	if (lights_on)
@@ -674,8 +749,10 @@ void ctoy_main_loop(void)
 	// Wii testing
 	/*
 	//fx_stanford_bunny();
-	draw_stanford();
+	*/
+	/*
 	fx_ears();
+	draw_stanford();
 	screenprintf("Bunny mesh obj id %d", bunny_mesh.obj_id);
 	if (bunny_mesh.obj_id >= 0)
 	{
@@ -711,6 +788,10 @@ void ctoy_main_loop(void)
 			fx_rotation_illusion();
 			break;
 
+		case 6:
+			fx_matcap_bunny();
+			break;
+
 
 		case 99:
 			// Black screen
@@ -720,7 +801,7 @@ void ctoy_main_loop(void)
 			break;
 	}
 
-	screenprint_draw_prints();
+	//screenprint_draw_prints();
 
 	ctoy_swap_buffer(NULL);
 }

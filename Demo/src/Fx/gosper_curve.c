@@ -40,6 +40,7 @@ static void Gosper_Turn(float sign, struct PointList* points)
     }
 }
 
+
 void Gosper_Move(struct PointList* points)
 {
     float2 next;

@@ -2,8 +2,11 @@
 #define UFBX_TO_MESH_H
 
 #include "../Ziz/mesh.h"
+#include "../ufbx/ufbx.h"
 
-struct Mesh* Ufbx_LoadMesh(const char* fbx_filename);
+ufbx_mesh* Ufbx_GetFirstMesh(const char* fbx_filename);
+struct Mesh Ufbx_LoadToMesh(ufbx_mesh* mesh);
+void Ufbx_DrawMesh(ufbx_mesh* mesh);
 
 
 #endif

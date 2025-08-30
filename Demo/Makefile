@@ -32,6 +32,7 @@ ZIZ_RESOURCES_INCLUDE = $(ZIZ_DIR)/ressources/include
 #---------------------------------------------------------------------------------
 
 CFLAGS	= -g -O3 -mrvl -Wall $(MACHDEP) $(INCLUDE) -DSYNC_PLAYER -DUFBX_REAL_IS_FLOAT -DUFBX_LITTLE_ENDIAN=0
+CFLAGS += -Wno-misleading-indentation -Wno-unused-variable -Wno-unused-function -Wno-maybe-uninitialized
 CXXFLAGS	=	$(CFLAGS)
 
 LDFLAGS	=	-g $(MACHDEP) -mrvl -Wl,-Map,$(notdir $@).map

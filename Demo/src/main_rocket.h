@@ -56,7 +56,15 @@ static int track_stanford_light_color; // Pick color from active gradient
 static int track_stanford_light_ambient_color; // Pick color from active gradient
 static int track_stanford_light_intensity; // Pick color from active gradient
 
+// Matcap bunny
+static int track_matcap_index;
+
 // TODO Scissors rectangles
+static int track_scissor_1_cut;
+static int track_scissor_1_left;
+static int track_scissor_1_right;
+static int track_scissor_1_top;
+static int track_scissor_1_bottom;
 
 
 // Variables
@@ -119,4 +127,14 @@ static void init_rocket_tracks(void)
     track_stanford_light_color = add_to_rocket("stfrd_light_color");
     track_stanford_light_ambient_color = add_to_rocket("stfrd_light_amb_color");
     track_stanford_light_intensity = add_to_rocket("stfrd_light_intensity");
+
+
+
+	track_matcap_index = add_to_rocket("matcap_index");
+
+	track_scissor_1_cut = add_to_rocket("scissors_1_cut");
+	track_scissor_1_left= add_to_rocket("scissors_1_left");
+	track_scissor_1_right= add_to_rocket("scissors_1_right");
+	track_scissor_1_top= add_to_rocket("scissors_1_top");
+	track_scissor_1_bottom= add_to_rocket("scissors_1_bottom");
 }

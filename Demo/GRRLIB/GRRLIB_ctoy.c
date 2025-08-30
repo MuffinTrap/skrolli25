@@ -58,7 +58,6 @@ int main()
     ctoy_begin();
 
     // Wait loop for recording
-    /*
     while(true)
     {
         WPAD_ScanPads();
@@ -68,7 +67,6 @@ int main()
             break;
         }
     }
-    */
 
     struct Mp3Song song = Mp3_LoadSong("assets/Brian-Psy_Rabbit.mp3");
     if (song.mp3file != NULL)

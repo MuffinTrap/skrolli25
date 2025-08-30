@@ -13,4 +13,6 @@ float2 direction_2d(float2 A, float2 B);
 
 #define M_SCALE2(dest, A, scalar) { (dest).x = (A).x * scalar; (dest).y = (A).y * scalar;}
 
+#define M_SCALE3(dest, A, scalar) { (dest).x = (A).x * scalar; (dest).y = (A).y * scalar; (A).z = (A).z * scalar;}
+
 #endif

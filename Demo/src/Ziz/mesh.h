@@ -9,6 +9,13 @@ enum MeshDrawMode
     DrawMatcap
 };
 
+enum VertexAttribute
+{
+    AttributePosition = 1,
+    AttributeNormal = 2,
+    AttributeTexcoord = 4
+};
+
 struct Mesh
 {
     float* positions;
@@ -18,21 +25,26 @@ struct Mesh
     int vertex_count;
     int index_count;
     int allocated_vertex_count;
+
+    unsigned int enabled_attributes;
 };
 
-enum VertexAttribute
-{
-    AttributePosition = 1,
-    AttributeNormal = 2,
-    AttributeTexcoord = 4
-};
 
 struct Mesh Mesh_CreateEmpty(void);
 
-void Mesh_PrintInfo(struct Mesh* mesh);
+void Mesh_PrintInfo(struct Mesh* mesh, bool to_screen);
 void Mesh_Allocate(struct Mesh* mesh, int vertex_count, int attribute_bitfield);
 
+void Mesh_DisableAttribute(struct Mesh* mesh, enum VertexAttribute attrib);
+void Mesh_EnableAttribute(struct Mesh* mesh, enum VertexAttribute attrib);
+
+void Mesh_GenerateMatcapUVs(struct Mesh* mesh);
+
+/** @brief Draw using indices
+ */
 void Mesh_DrawElements(struct Mesh* mesh, enum MeshDrawMode mode);
+/** @brief Draw without indices
+ */
 void Mesh_DrawArrays(struct Mesh* mesh, enum MeshDrawMode mode);
 
 
