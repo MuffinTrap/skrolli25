@@ -41,6 +41,8 @@ void GradientTexture_DrawTexture(struct GradientTexture* texture, float scale);
  */
 void GradientTexture_DrawGradient(struct Gradient* gradient, enum GradientAlphaMode alphamode, float size, float offset);
 
+void GradientTexture_SetFiltering(struct GradientTexture* texture, GLenum mode);
+
 
 
 #endif

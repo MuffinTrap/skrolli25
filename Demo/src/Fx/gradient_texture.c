@@ -334,3 +334,12 @@ void GradientTexture_DrawGradient(struct Gradient* gradient, enum GradientAlphaM
         case GradientCircle: DrawCircleGradient(gradient, gradient_size, gradient_offset); break;
       }
 }
+
+void GradientTexture_SetFiltering(struct GradientTexture* texture, GLenum mode)
+{
+    glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, texture->gl_texture_name);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mode);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mode);
+    glDisable(GL_TEXTURE_2D);
+}

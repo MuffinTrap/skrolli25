@@ -133,8 +133,10 @@ void ctoy_begin(void)
 	// Bunny pictures
 	lost_bunny_texture = LoadImage("assets/lost_bun.png");
 	falling_bunny_texture = LoadImage("assets/falling_bun.png");
-	logo_texture = LoadImage("assets/logo.png");
 	matcap_green_orange = LoadImage("assets/matcap.png");
+
+	logo_texture = LoadImage("assets/logo.png");
+	GradientTexture_SetFiltering(&logo_texture, GL_NEAREST);
 
 	// Colors and gradients
 	ColorManager_LoadColors();
@@ -800,7 +802,6 @@ void ctoy_main_loop(void)
 			// Quit
 			break;
 	}
-
 	//screenprint_draw_prints();
 
 	ctoy_swap_buffer(NULL);
