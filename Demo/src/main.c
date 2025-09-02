@@ -211,155 +211,10 @@ void ctoy_end(void)
 	screenprint_free_memory();
 }
 
-void clear_screen( void )
-{
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glViewport(0, 0, ctoy_frame_buffer_width(), ctoy_frame_buffer_height());
-#ifdef GEKKO
-	glClear(GL_COLOR_BUFFER_BIT);
-#else
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-#endif
-}
+// Selection functions
 
-void start_frame_3D( void )
-{
-	glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-	glDepthMask(GL_TRUE); //  is this needed?
-	glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+#include "main_util_functions.h"
 
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(90.0, 4.0/3.0, NEAR_PLANE, FAR_PLANE);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(0.0f, 0.0f, 1.0f,
-			  0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f);
-}
-
-void start_frame_ortho_3D( void )
-{
-	glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-	glDepthMask(GL_TRUE); //  is this needed?
-	glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	float aspect = 4.0f/3.0f;
-	glOrtho(-aspect, aspect, -1.0f, 1.0f, NEAR_PLANE, FAR_PLANE);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(0.0f, 0.0f, 1.0f,
-			  0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f);
-
-}
-
-void start_frame_2D( void )
-{
-
-    //glDisable(GL_TEXTURE_2D);
-    // glEnable(GL_BLEND);
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_DEPTH_TEST);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluOrtho2D(0.0f, (double)ctoy_frame_buffer_width(), 0.0, (double)ctoy_frame_buffer_height());
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glTranslatef(0.375f, 0.375f, 0.0f);
-}
-
-void tri()
-{
-	glBegin(GL_TRIANGLES);
-		glVertex2f(10.0f, 10.0f);
-		glVertex2f(100.0f, 10.0f);
-		glVertex2f(50.0f, 100.0f);
-	glEnd();
-}
-
-struct Gradient* select_gradient()
-{
-	struct Gradient* grad;
-	switch( (int)get_from_rocket(track_gradient_index))
-	{
-		case 0: grad = &rainbow_gradient; break;
-		case 1: grad = &halo_gradient; break;
-		default: grad = &white_gradient; break;
-	}
-
-	int shape = (int)get_from_rocket(track_gradient_shape);
-	screenprintf("Selected shape %d", shape);
-
-	float repeat = get_from_rocket(track_gradient_repeat);
-	grad->repeats = repeat;
-
-	switch(shape)
-	{
-		case GradientVertical:
-			grad->shape = GradientVertical;
-			break;
-		case GradientRadial:
-			grad->shape = GradientRadial;
-			break;
-		case GradientCircle:
-			grad->shape = GradientCircle;
-			break;
-		default:
-			grad->shape = GradientVertical;
-	}
-	return grad;
-}
-struct GradientTexture* select_matcap()
-{
-	struct GradientTexture* text;
-	int texture_index = (int)get_from_rocket(track_matcap_index);
-	screenprintf("Selected matcap %d", texture_index);
-	switch(texture_index)
-	{
-		case 0: text = &matcap_green_orange; break;
-		default: text = &matcap_green_orange; break;
-	}
-	return text;
-}
-
-struct GradientTexture* select_texture()
-{
-	struct GradientTexture* text;
-	int texture_index = (int)get_from_rocket(track_bunny_index);
-	screenprintf("Selected texture %d", texture_index);
-	switch(texture_index)
-	{
-		case 0: text = &lost_bunny_texture; break;
-		case 1: text = &falling_bunny_texture; break;
-		case 2: text = &logo_texture; break;
-		case 3: text = &lynn_test_gs; break;
-		case 4: text = &lynn_test_rgb; break;
-		case 5: text = &matcap_green_orange; break;
-		default: return NULL;
-	}
-	switch((int)get_from_rocket(track_gradient_mode))
-	{
-		case GradientMultiply:
-			text->alphamode = GradientMultiply;
-			break;
-		case GradientCutout:
-			text->alphamode = GradientCutout;
-			break;
-	}
-	return text;
-}
 
 void morph_flake(struct KochFlake* flake)
 {
@@ -388,8 +243,6 @@ void fx_ears()
 
 void fx_gradient_bunny()
 {
-	short x = get_from_rocket(track_translate_x);
-	short y = get_from_rocket(track_translate_y);
 	float scale = get_from_rocket(track_scale_xyz);
 	float offset = get_from_rocket(track_gradient_offset);
 	float gradient_size = get_from_rocket(track_gradient_size);
@@ -399,7 +252,7 @@ void fx_gradient_bunny()
 	start_frame_2D();
 	glPushMatrix();
 
-		glTranslatef(center_x+x, center_x+y, 0.0f);
+		translate_by_rocket(center_x, center_y);
 		glScalef(1.0f, 1.0f, 1.0f);
 
 		GradientTexture_Draw(text, grad, scale, gradient_size, offset);
@@ -437,14 +290,9 @@ void fx_gosper_curve()
 static void draw_stanford(enum MeshDrawMode drawmode)
 {
 	//start_frame_3D();
-	glTranslatef(
-		get_from_rocket(track_translate_x),
-		get_from_rocket(track_translate_y),
-		get_from_rocket(track_translate_z)
-	);
-	glRotatef(get_from_rocket(track_rotation_x), 1.0f, 0.0f, 0.0f);
-	glRotatef(get_from_rocket(track_rotation_y), 0.0f, 1.0f, 0.0f);
-	glRotatef(get_from_rocket(track_rotation_z), 0.0f, 0.0f, 1.0f);
+	translate_by_rocket(0.0f, 0.0f);
+
+	rotate_by_rocket();
 
 	float scale = get_from_rocket(track_scale_xyz) * 0.990f;
 	glScalef(scale, scale, scale);
@@ -471,17 +319,9 @@ static void fx_matcap_bunny()
 		glScissor(l, b, r-l, t-b );
 	}
 	glPushMatrix();
-		glTranslatef(
-			get_from_rocket(track_translate_x),
-			get_from_rocket(track_translate_y),
-			get_from_rocket(track_translate_z)
-		);
-		glRotatef(get_from_rocket(track_rotation_x), 1.0f, 0.0f, 0.0f);
-		glRotatef(get_from_rocket(track_rotation_y), 0.0f, 1.0f, 0.0f);
-		glRotatef(get_from_rocket(track_rotation_z), 0.0f, 0.0f, 1.0f);
-
-		float scale = get_from_rocket(track_scale_xyz);
-		glScalef(scale, scale, scale);
+		translate_by_rocket(0.0f, 0.0f);
+		rotate_by_rocket();
+		scale_by_rocket(true);
 
 		glColor3f(1.0f, 1.0f, 1.0f);
 		struct GradientTexture* material = select_matcap();
@@ -584,19 +424,24 @@ void fx_stanford_bunny()
 
 void fx_rotation_illusion()
 {
-	float2 center = {ctoy_frame_buffer_width()/2, ctoy_frame_buffer_height()/2};
+	start_frame_2D();
 	glPushMatrix();
-	//float3 color1 = {0.8f, 0.2f, 0.35f};
+		translate_by_rocket(center_x, center_y);
+		rotate_by_rocket();
+		//float3 color1 = {0.8f, 0.2f, 0.35f};
 
-	float color1 = 0.0f;
-	float color2 = 1.0f;
-	float speed = 4.0f;
-	float scale = 3.0f;
-	float progress = ctoy_get_time()/5;
-	rotation_fx(&flake_mesh_recursion4,
-				scale, speed, progress,
-			 select_gradient(),
-			 color1, color2);
+		struct Gradient* grad = select_gradient();
+		float color2 = get_from_rocket(track_gradient_offset);
+		float color1 = get_from_rocket(track_rotation_illusion_color2);
+		screenprintf("Colors : %.2f, %.2f", color2, color1);
+		float scale = get_from_rocket(track_scale_xyz);
+		float progress = get_from_rocket(track_rotation_illusion_progress);
+		rotation_fx(
+			&flake_mesh_recursion3,
+			&flake_mesh_recursion4,
+					scale, progress,
+				grad,
+				color1, color2);
 	glPopMatrix();
 }
 
@@ -610,32 +455,26 @@ void fx_flake_tunnel()
 	glDisable(GL_DEPTH_TEST);
 
 	glPushMatrix();
-	glTranslatef(
-		get_from_rocket(track_translate_x),
-		get_from_rocket(track_translate_y),
-		get_from_rocket(track_translate_z)
-	);
-	glRotatef(get_from_rocket(track_rotation_x), 1.0f, 0.0f, 0.0f);
-	glRotatef(get_from_rocket(track_rotation_y), 0.0f, 1.0f, 0.0f);
-	glRotatef(get_from_rocket(track_rotation_z), 0.0f, 0.0f, 1.0f);
+	translate_by_rocket(0.0f, 0.0f);
+	rotate_by_rocket();
+	scale_by_rocket(false);
 
-	float scale = get_from_rocket(track_scale_xyz);
-	glScalef(scale, scale, 1.0f);
 
 	float2 center = {0.0f, 0.0f};
 
 	int shapes = (int)get_from_rocket(track_tunnel_shapes);
 	float gradient_step = get_from_rocket(track_tunnel_gradient_step);
 
-	float scale_step = get_from_rocket(track_tunnel_scale_step);
+	float base_color = get_from_rocket(track_gradient_offset);
+	float scale_step = get_from_rocket(track_tunnel_scale_step) / 100.0f;
 	float rotation_step = get_from_rocket(track_tunnel_rotation_step);
 	screenprintf("Tunnel shapes %d", shapes);
 	struct Gradient* grad = select_gradient();
 	for(int f = 0; f < shapes; f++)
 	{
-		Gradient_glColor(grad, 0.00f + gradient_step * f);
+		Gradient_glColor(grad, base_color + gradient_step * f);
 		glPushMatrix();
-			glRotatef(rotation_step, 0.0f, 0.0f, 1.0f);
+			glRotatef(rotation_step * f, 0.0f, 0.0f, 1.0f);
 			float flake_scale = scale - scale_step * (f+1);
 			screenprintf("Flake scale %d: %.2f", f, flake_scale);
 			glScalef(flake_scale, flake_scale, 1.0f);
@@ -666,6 +505,7 @@ void fx_flake_tunnel()
 
 void fx_flake_wheel()
 {
+	start_frame_2D();
 	morph_flake(&flake);
 	flake.recursion_level = 4;
 	float old_radius = flake.radius;
@@ -673,14 +513,9 @@ void fx_flake_wheel()
 	flake.radius = scale;
 	KochFlake_WriteToMesh(&flake, &flake_mesh_recursion4);
 	flake.radius = old_radius;
-	start_frame_2D();
 	glPushMatrix();
 
-	glTranslatef(
-		center_x + get_from_rocket(track_translate_x),
-		center_y + get_from_rocket(track_translate_y),
-		get_from_rocket(track_translate_z)
-	);
+	translate_by_rocket(center_x, center_y);
 	glRotatef( get_from_rocket(track_rotation_z), 0.0f, 0.0f, 1.0f );
 	float2 center = {0.0f, 0.0f};
 
@@ -734,13 +569,14 @@ void update_timing()
 
 void ctoy_main_loop(void)
 {
-	center_x = ctoy_frame_buffer_width()/2;
-	center_y = ctoy_frame_buffer_height()/2;
-	clear_screen();
-	start_frame_2D();
 	screenprint_start_frame();
 	screenprint_set_scale(2.0f);
+	center_x = ctoy_frame_buffer_width()/2;
+	center_y = ctoy_frame_buffer_height()/2;
 
+	clear_screen();
+
+	start_frame_2D();
 	float scene_number = get_from_rocket(track_scene);
 	screenprintf("I am all ears");
 	screenprintf("Active scene %.0f", scene_number);
@@ -793,6 +629,12 @@ void ctoy_main_loop(void)
 		case 6:
 			fx_matcap_bunny();
 			break;
+
+		case 7:
+			// TODO Many bunnies
+			// Bunny flock
+			break;
+
 
 
 		case 99:

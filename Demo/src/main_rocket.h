@@ -8,6 +8,7 @@ static int track_scale_xyz;	  // glScale x,y,z for effect
 static int track_rotation_x;	  // glRotate x,y,z for effect
 static int track_rotation_y;	  // glRotate x,y,z for effect
 static int track_rotation_z;	  // glRotate x,y,z for effect
+static int track_background_color;
 
 // Fx tracks
 
@@ -49,6 +50,10 @@ static int track_flake_wheel_shape_color;
 static int track_gosper_segments;
 static int track_gosper_follow_on;
 
+// Rotation illusion
+static int track_rotation_illusion_progress;
+static int track_rotation_illusion_color2;
+
 // Stanford bunny
 static int track_stanford_light_on;
 static int track_stanford_light_dir; // Rotation on X-axis
@@ -74,10 +79,13 @@ static int track_scissor_1_bottom;
 
 static void init_rocket_tracks(void)
 {
+	// Timing
 	set_BPM(bpm);
 	set_RPB(rpb);
     row_rate = (bpm / 60.0) * rpb;
 	track_row = add_to_rocket("row");
+
+	// General
 	track_scene = add_to_rocket("scene");
 	track_translate_x = add_to_rocket("translate_x");
 	track_translate_y = add_to_rocket("translate_y");
@@ -87,6 +95,11 @@ static void init_rocket_tracks(void)
 	track_rotation_y = add_to_rocket("rotation_y");
 	track_rotation_z = add_to_rocket("rotation_z");
 
+	// Background color : from active gradient
+	track_background_color = add_to_rocket("background_col");
+
+
+	// Gradient
 	track_gradient_mode = add_to_rocket("gradient_mode");
 	track_gradient_shape = add_to_rocket("gradient_shape");
 	track_gradient_offset = add_to_rocket("gradient_offset");
@@ -94,11 +107,13 @@ static void init_rocket_tracks(void)
 	track_gradient_index = add_to_rocket("gradient_index");
 	track_gradient_size = add_to_rocket("gradient_size");
 
+	// Bunnies and logos
 	track_bunny_index = add_to_rocket("bunny_index");
 	track_bunny_x = add_to_rocket("bunny_x");
 	track_bunny_y = add_to_rocket("bunny_y");
 	track_bunny_size = add_to_rocket("bunny_size");
 
+	// Koch Flake shape
 	track_flake_ratio_off = add_to_rocket("flake_ratio_off");
 	track_flake_angle_off = add_to_rocket("flake_angle_off");
 	track_flake_extrusion_off = add_to_rocket("flake_extrusion_off");
@@ -122,6 +137,12 @@ static void init_rocket_tracks(void)
 	track_gosper_follow_on = add_to_rocket("gosper_follow");
 	track_gosper_segments = add_to_rocket("gosper_segments");
 
+	track_rotation_illusion_progress = add_to_rocket("illusion_progress");
+	track_rotation_illusion_color2 = add_to_rocket("illusion_color2");
+
+
+	// Stanford
+
 	track_stanford_light_on = add_to_rocket("stfrd_light_on");
 	track_stanford_light_dir = add_to_rocket("stfrd_light_dir");
     track_stanford_light_color = add_to_rocket("stfrd_light_color");
@@ -129,6 +150,7 @@ static void init_rocket_tracks(void)
     track_stanford_light_intensity = add_to_rocket("stfrd_light_intensity");
 
 
+	// Matcap & scissors
 
 	track_matcap_index = add_to_rocket("matcap_index");
 

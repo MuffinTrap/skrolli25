@@ -55,27 +55,29 @@ void screenprint_draw_prints(void)
     gluOrtho2D(0.0, (double)ctoy_frame_buffer_width(), 0.0, (double)ctoy_frame_buffer_height());
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glTranslatef(0.375f, 0.375f, 0.0f);
+    glPushMatrix();
+        glTranslatef(0.375f, 0.375f, 0.0f);
 
-    static PixelFont* debugFont = NULL;
-    if (debugFont == NULL)
-    {
-        debugFont = PixelFont_LoadDebugFont();
-    }
-    short dx = 0;
-    short dy = ctoy_frame_buffer_height() - 32;
-    for(int line = 0; line < showIndex; line++)
-    {
-        short lines = PixelFont_DrawText(debugFont, dx, dy, scale, lineBuffer[line], LINE_LENGTH);
-
-        dx = 0;
-        dy -= debugFont->ch * scale * lines;
-        if (dy <= 0)
+        static PixelFont* debugFont = NULL;
+        if (debugFont == NULL)
         {
-            break;
+            debugFont = PixelFont_LoadDebugFont();
         }
-    }
-    glScalef(1.0f, 1.0f, 1.0f);
+        short dx = 0;
+        short dy = ctoy_frame_buffer_height() - 32;
+        for(int line = 0; line < showIndex; line++)
+        {
+            short lines = PixelFont_DrawText(debugFont, dx, dy, scale, lineBuffer[line], LINE_LENGTH);
+
+            dx = 0;
+            dy -= debugFont->ch * scale * lines;
+            if (dy <= 0)
+            {
+                break;
+            }
+        }
+        glScalef(1.0f, 1.0f, 1.0f);
+    glPopMatrix();
 }
 
 void screenprint_free_memory(void)
