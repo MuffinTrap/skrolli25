@@ -19,6 +19,7 @@ struct KochFlake
 typedef struct KochFlake KochFlake;
 
 struct KochFlake KochFlake_CreateDefault(short recursion_level);
+void KochFlake_SetMorphToDefault(struct KochFlake* flake);
 
 void KochFlake_WriteToMesh(struct KochFlake* flake, struct Mesh* mesh);
 

@@ -138,7 +138,8 @@ float2 Gosper_Draw(struct PointList* list, struct Gradient* gradient, float amou
     float2 left;
     float2 right;
     glBegin(GL_QUAD_STRIP);
-    int last_index = M_MIN( list->used_size-1, (int)floor(amount) * 2);
+    // Last is always odd number
+    int last_index = M_MIN( list->used_size, (int)floor(amount) * 2 -1);
     float gradient_step = 1.0f / (float)list->used_size;
     float gradient_stop = 0.0f;
 
@@ -153,10 +154,11 @@ float2 Gosper_Draw(struct PointList* list, struct Gradient* gradient, float amou
     }
 
     // Draw last partial segment
-    int end_point_left = M_MIN( list->used_size-2, last_index-1);
-    int end_point_right = M_MIN( list->used_size-1, last_index);
+    int end_point_left = M_MIN( list->used_size-2, last_index+1);
+    int end_point_right = M_MIN( list->used_size-1, last_index+2);
 
-    screenprintf("Last is %d/%d Amount %d\n", end_point_left, list->used_size-1, amount);
+    screenprintf("Last index %d", last_index);
+    screenprintf("Last is %d/%d Amount %.2f\n", end_point_left, end_point_right, amount);
 
     float2 last_left = list->points[end_point_left];
     float2 last_right = list->points[end_point_right];
@@ -177,6 +179,8 @@ float2 Gosper_Draw(struct PointList* list, struct Gradient* gradient, float amou
     }
     glVertex2f(last_left.x, last_left.y);
     glVertex2f(last_right.x, last_right.y);
+
+    screenprintf("draw from %.2f,%.2f t %.2f,%.2f\n", left.x, left.y, last_left.x, last_left.y);
     glEnd();
 
     float2 dir = direction_2d(last_left, last_right);

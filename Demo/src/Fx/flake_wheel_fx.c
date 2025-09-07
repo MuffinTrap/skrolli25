@@ -31,15 +31,14 @@ void flake_wheel_fx(struct Mesh* flake,
         for (int p = 0; p < 6; p++)
         {
             glPushMatrix();
-            glTranslatef(
-                hexpoints[p].x,
-                hexpoints[p].y,
-                0.0f);
-            glRotatef(shape_rotation_deg, 0.0f, 0.0f, 1.0f);
-            //glScalef(pattern_radius/6.0f, pattern_radius/6.0f, 1.0f);
-            Gradient_glColor(gradient, base_color_stop + ring_color_offset * i + shape_color_offset * p);
-            Mesh_DrawArrays(flake, DrawTriangles);
-            //draw_snowflake(zero2, pattern_radius/6.0f, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list);
+                glTranslatef(
+                    hexpoints[p].x,
+                    hexpoints[p].y,
+                    0.0f);
+                glRotatef(shape_rotation_deg, 0.0f, 0.0f, 1.0f);
+                //glScalef(pattern_radius/6.0f, pattern_radius/6.0f, 1.0f);
+                Gradient_glColor(gradient, base_color_stop + ring_color_offset * i + shape_color_offset * p);
+                Mesh_Draw(flake, DrawTriangles);
             glPopMatrix();
         }
 

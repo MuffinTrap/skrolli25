@@ -195,16 +195,19 @@ struct KochFlake KochFlake_CreateDefault(short recursion_level)
 
 	flake.recursive_list = PointList_create(needed_size);
 
-    float2 zero = {0.0f, 0.0f};
-    flake.center = zero;
-    flake.radius = 0.5f;
-    flake.recursion_level = 5;
-    flake.angle = 60;
-    flake.ratio = 1.0f/3.0f;
-    flake.extrusion = 1.0f;
+    KochFlake_SetMorphToDefault(&flake);
     flake.recursion_level = 4;
 
     return flake;
+}
+void KochFlake_SetMorphToDefault(struct KochFlake* flake)
+{
+    float2 zero = {0.0f, 0.0f};
+    flake->center = zero;
+    flake->radius = 0.5f;
+    flake->angle = 60;
+    flake->ratio = 1.0f/3.0f;
+    flake->extrusion = 1.0f;
 }
 
 #endif

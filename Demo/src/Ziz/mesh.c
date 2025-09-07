@@ -84,39 +84,137 @@ static void Disable_Arrays(struct Mesh* mesh)
     glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-void Mesh_DrawElements(struct Mesh* mesh, enum MeshDrawMode mode)
+static void Mesh_DrawLines(struct Mesh* mesh)
+{
+    if (mesh->indices != NULL)
+    {
+        for (int i = 0; i < mesh->index_count; i += 3)
+        {
+            glBegin(GL_LINE_LOOP);
+            int v1 = mesh->indices[i+0] * 3;
+            int v2 = mesh->indices[i+1] * 3;
+            int v3 = mesh->indices[i+2] * 3;
+
+            glVertex3f(mesh->positions[v1+0],
+                    mesh->positions[v1+1],
+                    mesh->positions[v1+2]);
+
+            glVertex3f(mesh->positions[v2+0],
+                    mesh->positions[v2+1],
+                    mesh->positions[v2+2]);
+
+            glVertex3f(mesh->positions[v3+0],
+                    mesh->positions[v3+1],
+                    mesh->positions[v3+2]);
+            /*
+            v = i * 3; // 0 - 2
+            glVertex3f(mesh->positions[v+0],
+                    mesh->positions[v+1],
+                    mesh->positions[v+2]);
+                    */
+            glEnd();
+        }
+
+    }
+    else
+    {
+        for (int i = 0; i < mesh->vertex_count; i += 3)
+        {
+            glBegin(GL_LINE_LOOP);
+            int v = i * 3;  // 0 - 2
+            glVertex3f(mesh->positions[v+0],
+                    mesh->positions[v+1],
+                    mesh->positions[v+2]);
+            v += 3;  // 3 - 5
+            glVertex3f(mesh->positions[v+0],
+                    mesh->positions[v+1],
+                    mesh->positions[v+2]);
+            v += 3;  // 6 - 8
+            glVertex3f(mesh->positions[v+0],
+                    mesh->positions[v+1],
+                    mesh->positions[v+2]);
+            /*
+            v = i * 3; // 0 - 2
+            glVertex3f(mesh->positions[v+0],
+                    mesh->positions[v+1],
+                    mesh->positions[v+2]);
+                    */
+            glEnd();
+        }
+    }
+
+}
+
+static int Calculate_Percentage(int vertex_count, int percentage)
+{
+    if (percentage >= 100)
+    {
+        return vertex_count;
+    }
+    // How many triangles to draw
+    int triangles = vertex_count/3;
+    int p_amount = floor(((float)percentage/100.0f) * (float)triangles);
+    int amount = M_MIN(triangles, p_amount);
+    int draw_amount = M_MAX(0, amount);
+    // Back to vertices
+    return draw_amount * 3;
+}
+
+
+static void Mesh_DrawElements(struct Mesh* mesh, int percentage)
 {
     Setup_Arrays(mesh);
-    GLenum gl_mode = GL_TRIANGLES;
-    if (mode == DrawLines)
-    {
-        glPolygonMode(GL_FRONT, GL_LINE);
-    }
-    else if (mode == DrawPoints)
-    {
-        gl_mode = GL_POINTS;
-    }
-	glDrawElements(gl_mode, mesh->index_count, GL_UNSIGNED_SHORT, mesh->indices);
-    glPolygonMode(GL_FRONT, GL_FILL);
+    int draw_amount = Calculate_Percentage(mesh->vertex_count, percentage);
+	glDrawElements(GL_TRIANGLES, draw_amount, GL_UNSIGNED_SHORT, mesh->indices);
     Disable_Arrays(mesh);
 
 }
 
-void Mesh_DrawArrays(struct Mesh* mesh, enum MeshDrawMode mode)
+static void Mesh_DrawArrays(struct Mesh* mesh, int percentage)
 {
     Setup_Arrays(mesh);
-    GLenum gl_mode = GL_TRIANGLES;
+    int draw_amount = Calculate_Percentage(mesh->vertex_count, percentage);
+    glDrawArrays(GL_TRIANGLES, 0, draw_amount);
+    Disable_Arrays(mesh);
+}
+
+void Mesh_Draw(struct Mesh* mesh, enum MeshDrawMode mode)
+{
     if (mode == DrawLines)
     {
-        glPolygonMode(GL_FRONT, GL_LINE);
+        Mesh_DrawLines(mesh);
     }
-    else if (mode == DrawPoints)
+    else
     {
-        gl_mode = GL_POINTS;
+        if (mesh->indices != NULL && mesh->index_count > 0)
+        {
+            Mesh_DrawElements(mesh, 100);
+        }
+        else
+        {
+            Mesh_DrawArrays(mesh, 100);
+        }
     }
-    glDrawArrays(gl_mode, 0, mesh->vertex_count);
-    glPolygonMode(GL_FRONT, GL_FILL);
-    Disable_Arrays(mesh);
+}
+
+void Mesh_DrawPartial(struct Mesh* mesh, enum MeshDrawMode mode, int percentage)
+{
+    if (mode == DrawLines)
+    {
+        Mesh_DrawLines(mesh);
+    }
+    else
+    {
+        if (mesh->indices != NULL && mesh->index_count > 0)
+        {
+            Mesh_DrawElements(mesh, percentage);
+        }
+        else
+        {
+            Mesh_DrawArrays(mesh, percentage);
+        }
+    }
+
 }
 
 void Mesh_PrintInfo(struct Mesh* mesh, bool to_screen)

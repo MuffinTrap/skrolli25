@@ -1,6 +1,7 @@
 #ifndef ROTATION_FX_C
 #define ROTATION_FX_C
 
+#include <ctoy.h>
 #include <opengl_include.h>
 #include "rotation_fx.h"
 #include "../Ziz/screenprint.h"
@@ -8,50 +9,32 @@
 //static float progression1 = 0.0f;
 //static float progression2 = 0.0f;
 
-
+// When this is called, glTranslatef to center has already been done
 void rotation_fx(
-    struct Mesh* flake3,
     struct Mesh* flake4,
                  float radius_scale,
                  float progress_normalized,
-                 struct Gradient* gradient,
-                 float foreground_stop,
-                 float background_stop)
+                 color3 fore,
+                 color3 back)
 {
     progress_normalized = progress_normalized - floor(progress_normalized);
     screenprintf("Prog N %.1f\n", progress_normalized);
 
-    screenprintf("Colors : %.2f, %.2f", foreground_stop, background_stop);
     float2 outerCenters[6];
 
-
-
-    // Screen clearing cannot be trusted
-
+    screenprintf("Fore : (%.2f, %.2f %.2f)", fore.r, fore.g, fore.b);
+    screenprintf("Back : (%.2f, %.2f %.2f)", back.r, back.g, back.b);
 
     float move_amount = (360)/12.0f;
     float2 zero2 = {0.0f, 0.0f};
     if (progress_normalized <= 0.5f)
     {
-        glPushMatrix();
-            glBegin(GL_QUADS);
-                glColor3f(1.0f, 0.0, 0.0f); // RED
-                Gradient_glColor(gradient, background_stop);
-                glVertex2f(-400.0f, -400.0f);
-                glVertex2f(400.0f, -400.0f);
-                glVertex2f(400.0f, 400.0f);
-                glVertex2f(-480.0f, 480.0f);
-            glEnd();
-        glPopMatrix();
         float size = 41.0f * radius_scale;
         //short recursion = fx_recursion-1;
         // Quadratic
         float pn = progress_normalized * 2.0f;
         float progression = 1.0f - (1.0f - pn) * (1.0f - pn);
         screenprintf("PG %.1f\n", progression);
-
-        glColor3f(0.0f, 0.0, 1.0f); // BLUE
-        Gradient_glColor(gradient, foreground_stop);
 
         get_corners(zero2, 6, size/2, progression * move_amount, outerCenters);
         for (int i = 0; i < 6; i++)
@@ -62,23 +45,15 @@ void rotation_fx(
                 glRotatef(progression * move_amount * -1.0f, 0.0f, 0.0f, 1.0f);
 
                 glScalef(size*0.5f, size*0.5f, 1.0f);
-                Mesh_DrawArrays(flake4, DrawTriangles);
+                glColor3f(fore.r, fore.g, fore.b);
+                Mesh_Draw(flake4, DrawTriangles);
+                //glColor3f(1.0f, 1.0f, 1.0f);
 
             glPopMatrix();
         }
     }
-    else if (progress_normalized > 0.5f)
+    else
     {
-        glPushMatrix();
-            glBegin(GL_QUADS);
-                glColor3f(1.0f, 0.0, 0.0f); // RED
-                Gradient_glColor(gradient, background_stop);
-                glVertex2f(-400.0f, -400.0f);
-                glVertex2f(400.0f, -400.0f);
-                glVertex2f(400.0f, 400.0f);
-                glVertex2f(-480.0f, 480.0f);
-            glEnd();
-        glPopMatrix();
         //short recursion = fx_recursion;
         float size = 59.0f * radius_scale;
         float inner_size = 35.0f * radius_scale;
@@ -88,30 +63,26 @@ void rotation_fx(
         float progression = 1.0f - (1.0f - pn) * (1.0f - pn);
         screenprintf("PG %.1f\n", progression);
         glPushMatrix();
-            //glTranslatef(center.x, center.y, 0.0f);
 
             // Big flake behind
             glPushMatrix();
-
-            glColor3f(0.0f, 0.0, 1.0f); // BLUE
-            Gradient_glColor(gradient, foreground_stop);
+                glColor3f(fore.r, fore.g, fore.b);
                 glRotatef(30.0f + progression * move_amount * -1.0f, 0.0f, 0.0f, 1.0f);
                 glScalef(size, size, 1.0f);
-                Mesh_DrawArrays(flake4, DrawTriangles);
-                //draw_snowflake(zero2, size, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list);
+                Mesh_Draw(flake4, DrawTriangles);
             glPopMatrix();
 
             // Smol in front
 
-            glColor3f(1.0f, 0.0, 0.0f); // RED
-            Gradient_glColor(gradient, background_stop);
+            //glColor3f(1.0f, 1.0f, 1.0f);
+
             glPushMatrix();
-                //glTranslatef(center.x, center.y, 0.0f);
+                glColor3f(back.r, back.g, back.b);
                 glRotatef(progression*move_amount, 0.0f, 0.0f, 1.0f);
                 glScalef(inner_size, inner_size, 1.0f);
-                Mesh_DrawArrays(flake4, DrawTriangles);
-                //draw_snowflake(zero2, inner_size, recursion, 60.0f, 1.0f/3.0f, 1.0f, recursive_list);
+                Mesh_Draw(flake4, DrawTriangles);
             glPopMatrix();
+            //glColor3f(1.0f, 1.0f, 1.0f);
         glPopMatrix();
     }
 }

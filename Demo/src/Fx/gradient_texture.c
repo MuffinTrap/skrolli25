@@ -3,7 +3,7 @@
 #include <m_float2_math.h>
 #include <texture.h>
 
-static void DrawVerticalGradient(struct Gradient* gradient, float texture_size, bool uvs, float gradient_offset)
+void GradientTexture_DrawVerticalGradient(struct Gradient* gradient, float2 texture_size, bool uvs, float gradient_offset)
 {
     float smoothness = 10.0f; // Pixels per quad
   //screenprintf("Gradient repeat %.2f", gradient_repeat);
@@ -16,10 +16,10 @@ static void DrawVerticalGradient(struct Gradient* gradient, float texture_size, 
     float size_y = screenHeight;
     if (uvs)
     {
-      dx = -0.5f * texture_size;
-      dy = -0.5f * texture_size;
-      size_x = 1.0f * texture_size;
-      size_y = 1.0f * texture_size;
+      dx = -0.5f * texture_size.x;
+      dy = -0.5f * texture_size.y;
+      size_x = 1.0f * texture_size.x;
+      size_y = 1.0f * texture_size.y;
     }
 
     float du = 0.0f;
@@ -272,6 +272,60 @@ void GradientTexture_DrawTexture(struct GradientTexture* texture, float scale)
     }
 }
 
+void GradientTexture_DrawBunny(struct GradientTexture* texture, struct Gradient* gradient,
+                               float2 bunny_pos, float bunny_size, float bunny_rot_z,
+                               float2 gradient_pos, float gradient_size, float gradient_offset)
+{
+    float2 bunny_size2 = {bunny_size, bunny_size};
+    float2 gradient_size2 = {gradient_size, gradient_size};
+    switch (texture->alphamode)
+    {
+      case GradientMultiply:
+      {
+        glPushMatrix();
+          glTranslatef(bunny_pos.x, bunny_pos.y, 0.0f);
+          glRotatef(bunny_rot_z, 0.0f, 0.0f, 1.0f);
+          GradientTexture_DrawTexture(texture, bunny_size);
+        glPopMatrix();
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_DST_COLOR, GL_ZERO);
+
+        glPushMatrix();
+          glTranslatef(gradient_pos.x, gradient_pos.y, 0.0f);
+          switch(gradient->shape)
+          {
+            case GradientVertical: GradientTexture_DrawVerticalGradient(gradient, bunny_size2, false, gradient_offset); break;
+            case GradientRadial: DrawRadialGradient(gradient, 0.0f, gradient_size, false, gradient_offset); break;
+            case GradientCircle: DrawCircleGradient(gradient, gradient_size, gradient_offset); break;
+          }
+        glPopMatrix();
+        glDisable(GL_BLEND);
+      }
+      break;
+      case GradientCutout:
+      {
+        glPushMatrix();
+          glTranslatef(gradient_pos.x, gradient_pos.y, 0.0f);
+          switch(gradient->shape)
+          {
+            case GradientVertical: GradientTexture_DrawVerticalGradient(gradient, gradient_size2, false, gradient_offset); break;
+            case GradientRadial: DrawRadialGradient(gradient, 0.0f, gradient_size, false, gradient_offset); break;
+            case GradientCircle: DrawCircleGradient(gradient, gradient_size, gradient_offset); break;
+          }
+        glPopMatrix();
+
+        glPushMatrix();
+          glTranslatef(bunny_pos.x, bunny_pos.y, 0.0f);
+          glRotatef(bunny_rot_z, 0.0f, 0.0f, 1.0f);
+          GradientTexture_DrawTexture(texture, bunny_size);
+        glPopMatrix();
+
+      }
+      break;
+    }
+
+}
 void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* gradient, float texture_size, float gradient_size, float gradient_offset)
 {
     // TODO Draw the image first
@@ -290,6 +344,9 @@ void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* grad
 		glAlphaFunc(GL_GEQUAL, 0.5f);
     }
     */
+
+    float2 texture_size2 = {texture_size, texture_size};
+    float2 grad_size2 = {gradient_size, gradient_size};
     switch (texture->alphamode)
     {
       case GradientMultiply:
@@ -301,7 +358,7 @@ void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* grad
 
         switch(gradient->shape)
         {
-          case GradientVertical: DrawVerticalGradient(gradient, texture_size, false, gradient_offset); break;
+          case GradientVertical: GradientTexture_DrawVerticalGradient(gradient, texture_size2, false, gradient_offset); break;
           case GradientRadial: DrawRadialGradient(gradient, 0.0f, gradient_size, false, gradient_offset); break;
           case GradientCircle: DrawCircleGradient(gradient, gradient_size, gradient_offset); break;
         }
@@ -312,7 +369,7 @@ void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* grad
       {
         switch(gradient->shape)
         {
-          case GradientVertical: DrawVerticalGradient(gradient, texture_size, false, gradient_offset); break;
+          case GradientVertical: GradientTexture_DrawVerticalGradient(gradient, texture_size2, false, gradient_offset); break;
           case GradientRadial: DrawRadialGradient(gradient, 0.0f, gradient_size, false, gradient_offset); break;
           case GradientCircle: DrawCircleGradient(gradient, gradient_size, gradient_offset); break;
         }
@@ -326,10 +383,11 @@ void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* grad
 
 void GradientTexture_DrawGradient(struct Gradient* gradient, enum GradientAlphaMode alphamode, float gradient_size, float gradient_offset)
 {
+  float2 one = {1.0f, 1.0f};
  // screenprintf("Draw Gradient sh %d sz %.1f of %.1f r %.1f", gradient->shape, gradient_size, gradient_offset);
       switch(gradient->shape)
       {
-        case GradientVertical: DrawVerticalGradient(gradient, 1.0f, false, gradient_offset); break;
+        case GradientVertical: GradientTexture_DrawVerticalGradient(gradient, one, false, gradient_offset); break;
         case GradientRadial: DrawRadialGradient(gradient, 0.0f, gradient_size, false, gradient_offset); break;
         case GradientCircle: DrawCircleGradient(gradient, gradient_size, gradient_offset); break;
       }

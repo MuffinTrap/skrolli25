@@ -1,6 +1,9 @@
 #ifndef MAIN_UTIL_FUNCTIONS_H
 #define MAIN_UTIL_FUNCTIONS_H
 
+// Hax to fix rotation illusion
+static float last_background_stop = -1.0f;
+
 struct Gradient* select_gradient()
 {
 	struct Gradient* grad;
@@ -38,53 +41,61 @@ struct GradientTexture* select_matcap()
 	struct GradientTexture* text;
 	int texture_index = (int)get_from_rocket(track_matcap_index);
 	screenprintf("Selected matcap %d", texture_index);
-	switch(texture_index)
+	if (texture_index >= 0 && texture_index < 6)
 	{
-		case 0: text = &matcap_green_orange; break;
-		default: text = &matcap_green_orange; break;
+		text = &matcaps[texture_index];
+	}
+	else
+	{
+		text = NULL;
 	}
 	return text;
 }
 
 struct GradientTexture* select_texture()
 {
-	struct GradientTexture* text;
 	int texture_index = (int)get_from_rocket(track_bunny_index);
-	screenprintf("Selected texture %d", texture_index);
-	switch(texture_index)
+	if (texture_index >= 0 && texture_index < BUNNY_AMOUNT)
 	{
-		case 0: text = &lost_bunny_texture; break;
-		case 1: text = &falling_bunny_texture; break;
-		case 2: text = &logo_texture; break;
-		case 3: text = &lynn_test_gs; break;
-		case 4: text = &lynn_test_rgb; break;
-		case 5: text = &matcap_green_orange; break;
-		default: return NULL;
+		screenprintf("Selected texture %d", texture_index);
+
+		struct GradientTexture* text;
+		text = &bunnies[texture_index];
+		switch((int)get_from_rocket(track_gradient_mode))
+		{
+			case GradientMultiply:
+				text->alphamode = GradientMultiply;
+				break;
+			case GradientCutout:
+				text->alphamode = GradientCutout;
+				break;
+		}
+		return text;
 	}
-	switch((int)get_from_rocket(track_gradient_mode))
+	else
 	{
-		case GradientMultiply:
-			text->alphamode = GradientMultiply;
-			break;
-		case GradientCutout:
-			text->alphamode = GradientCutout;
-			break;
+		return NULL;
 	}
-	return text;
 }
 
 void clear_screen( void )
 {
     float bg_stop = get_from_rocket(track_background_color);
-    if (bg_stop > 0.0f)
-    {
-        struct Gradient* activeGrad = select_gradient();
-        color3 bg = Gradient_GetColor(activeGrad, bg_stop);
-        glClearColor(bg.r, bg.g, bg.b, 0.0f);
-    }
-	else
+	// Only change background color if it changes
+	//if (bg_stop != last_background_stop)
 	{
-		glClearColor(0,0,0,0);
+		if (bg_stop > 0.0f)
+		{
+			struct Gradient* activeGrad = select_gradient();
+			color3 bg = Gradient_GetColor(activeGrad, bg_stop);
+			glClearColor(bg.r, bg.g, bg.b, 0.0f);
+		}
+		else
+		{
+			glClearColor(0,0,0,0);
+		}
+		bg_stop = last_background_stop;
+
 	}
 	glViewport(0, 0, ctoy_frame_buffer_width(), ctoy_frame_buffer_height());
 #ifdef GEKKO

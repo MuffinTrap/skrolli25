@@ -52,7 +52,6 @@ static int track_gosper_follow_on;
 
 // Rotation illusion
 static int track_rotation_illusion_progress;
-static int track_rotation_illusion_color2;
 
 // Stanford bunny
 static int track_stanford_light_on;
@@ -60,6 +59,7 @@ static int track_stanford_light_dir; // Rotation on X-axis
 static int track_stanford_light_color; // Pick color from active gradient
 static int track_stanford_light_ambient_color; // Pick color from active gradient
 static int track_stanford_light_intensity; // Pick color from active gradient
+static int track_stanford_triangle_percentage;
 
 // Matcap bunny
 static int track_matcap_index;
@@ -137,17 +137,17 @@ static void init_rocket_tracks(void)
 	track_gosper_follow_on = add_to_rocket("gosper_follow");
 	track_gosper_segments = add_to_rocket("gosper_segments");
 
+	// Rotation illusion
 	track_rotation_illusion_progress = add_to_rocket("illusion_progress");
-	track_rotation_illusion_color2 = add_to_rocket("illusion_color2");
 
 
 	// Stanford
-
 	track_stanford_light_on = add_to_rocket("stfrd_light_on");
 	track_stanford_light_dir = add_to_rocket("stfrd_light_dir");
     track_stanford_light_color = add_to_rocket("stfrd_light_color");
     track_stanford_light_ambient_color = add_to_rocket("stfrd_light_amb_color");
     track_stanford_light_intensity = add_to_rocket("stfrd_light_intensity");
+	track_stanford_triangle_percentage = add_to_rocket("stfrd_tri_percentage");
 
 
 	// Matcap & scissors

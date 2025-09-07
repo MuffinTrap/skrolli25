@@ -28,6 +28,11 @@ struct GradientTexture GradientTexture_Create(GLuint gl_texture_name, int ziz_te
  */
 void GradientTexture_Draw(struct GradientTexture* texture, struct Gradient* gradient, float texture_size, float gradient_size, float gradient_offset);
 
+void GradientTexture_DrawBunny(struct GradientTexture* texture, struct Gradient* gradient,
+                               float2 bunny_pos, float bunny_size, float bunny_rot_z,
+                               float2 gradient_pos, float gradient_size,
+                               float gradient_offset);
+
 /**
  * @brief Draws only the texture using alphamode
  */
@@ -40,6 +45,8 @@ void GradientTexture_DrawTexture(struct GradientTexture* texture, float scale);
  * @param repeats How many times to repeat the gradient
  */
 void GradientTexture_DrawGradient(struct Gradient* gradient, enum GradientAlphaMode alphamode, float size, float offset);
+
+void GradientTexture_DrawVerticalGradient(struct Gradient* gradient, float2 texture_size, bool uvs, float gradient_offset);
 
 void GradientTexture_SetFiltering(struct GradientTexture* texture, GLenum mode);
 

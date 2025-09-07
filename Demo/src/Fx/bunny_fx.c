@@ -23,17 +23,6 @@ struct Bunny Bunny_Load_GLTF(const char* filename)
     return bunny;
 }
 
-struct Bunny Bunny_Load_RAT(const char* filename)
-{
-    struct Bunny bunny;
-#ifdef USE_RAT_MODELS
-    bunny.rat = rat_model_create("bunny_medium", "assets/bunny_medium.rat", NULL);
-#endif
-
-    bunny.format = Bunny_RAT;
-    return bunny;
-}
-
 struct Bunny Bunny_Load_UFBX(const char* filename)
 {
     struct Bunny bunny;
@@ -57,21 +46,34 @@ void Bunny_Draw_immediate(struct Bunny* bunny)
     draw_gltf(bunny->obj_id);
 }
 
+void Bunny_Draw_mesh_partial(struct Bunny* bunny, enum MeshDrawMode draw_mode, int percentage)
+{
+    switch(bunny->format)
+    {
+        case Bunny_GLTF:
+            Mesh_DrawPartial(&bunny->mesh, draw_mode, percentage);
+        break;
+        case Bunny_FBX:
+#           ifdef GEKKO
+            Mesh_DrawPartial(&bunny->mesh, draw_mode, percentage);
+           // Ufbx_DrawMesh(bunny->ufbx_mesh);
+#           endif
+
+            break;
+    }
+
+}
+
 void Bunny_Draw_mesh(struct Bunny* bunny, enum MeshDrawMode draw_mode)
 {
     switch(bunny->format)
     {
         case Bunny_GLTF:
-            Mesh_DrawElements(&bunny->mesh, draw_mode);
+            Mesh_Draw(&bunny->mesh, draw_mode);
         break;
-        case Bunny_RAT:
-#           ifdef USE_RAT_MODELS
-            rat_model_render(bunny->rat);
-#           endif
-            break;
         case Bunny_FBX:
 #           ifdef GEKKO
-            Mesh_DrawArrays(&bunny->mesh, draw_mode);
+            Mesh_Draw(&bunny->mesh, draw_mode);
            // Ufbx_DrawMesh(bunny->ufbx_mesh);
 #           endif
 

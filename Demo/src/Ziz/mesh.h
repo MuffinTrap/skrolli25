@@ -39,13 +39,8 @@ void Mesh_DisableAttribute(struct Mesh* mesh, enum VertexAttribute attrib);
 void Mesh_EnableAttribute(struct Mesh* mesh, enum VertexAttribute attrib);
 
 void Mesh_GenerateMatcapUVs(struct Mesh* mesh);
-
-/** @brief Draw using indices
- */
-void Mesh_DrawElements(struct Mesh* mesh, enum MeshDrawMode mode);
-/** @brief Draw without indices
- */
-void Mesh_DrawArrays(struct Mesh* mesh, enum MeshDrawMode mode);
+void Mesh_Draw(struct Mesh* mesh, enum MeshDrawMode mode);
+void Mesh_DrawPartial(struct Mesh* mesh, enum MeshDrawMode mode, int percentage);
 
 
 #endif

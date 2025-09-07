@@ -72,6 +72,7 @@ color3 Gradient_GetColor(struct Gradient* gradient, float stop)
     short after_index = gradient->color_amount;
     float read_stop = 0.0f;
 
+    // Repeat and negative
     if (gradient->repeats > 0.0f)
     {
         // When repeats is 2; the gradient has been travelled twice by the time stop reaches 1.0f
@@ -86,6 +87,7 @@ color3 Gradient_GetColor(struct Gradient* gradient, float stop)
         stop = stop * -1.0f;
     }
 
+    // Looping
     if (stop > 1.0f)
     {
         // Going forward or backward?
@@ -100,7 +102,7 @@ color3 Gradient_GetColor(struct Gradient* gradient, float stop)
             // Change to 2.15 -> 0.15
             read_stop = decimal_part;
         }
-        if (gradient->loop_mode == GradientLoopMirror)
+        else if (gradient->loop_mode == GradientLoopMirror)
         {
             if (modulo == 0)
             {
