@@ -19,18 +19,42 @@ void screenprint_start_frame(void);
  * @param formatString printf style format string.
  * @param va_args Parameters for format string, these must always be supplied.
  */
-void screenprintf(const char* formatString, ... );
+void screenprintf_impl(const char* formatString, ... );
+void screenprint_impl(const char* string);
 
-void screenprint_set_scale(float scale);
 
 /**
  * @brief Call this after all other drawing is done to draw the messages printed.
  */
-void screenprint_draw_prints(void);
+void screenprint_draw_prints_impl(void);
 
 /**
  * @brief Releases all the memory in linebuffer
  */
 void screenprint_free_memory(void);
+
+/**
+ * @brief Set the scale of text
+ */
+void screenprint_set_scale(float scale);
+
+#   ifdef ZIZ_DISABLE_SCREENPRINT
+#   define screenprintf(format, ...)
+#   define screenprintf(string)
+#   define screenprint_draw_prints()
+#   define LINE_AMOUNT 1
+#   define LINE_LENGTH 1
+#   else
+#   define LINE_AMOUNT 120
+#   define LINE_LENGTH 80
+#   ifdef GEKKO
+#      define screenprintf(format, ...) screenprintf_impl(format, ##__VA_ARGS__)
+#   else
+#      define screenprintf(format, ...) screenprintf_impl(format, __VA_ARGS__)
+#   endif
+#   define screenprint(string) screenprint_impl(string)
+#   define screenprint_draw_prints() screenprint_draw_prints_impl()
+
+#   endif
 
 #endif

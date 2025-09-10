@@ -155,7 +155,7 @@ static void DrawRadialGradient(struct Gradient* gradient, float texture_size, fl
 
 static void DrawCircleGradient(struct Gradient* gradient, float gradient_size, float gradient_offset)
 {
-  screenprintf("Draw Circle gradient");
+  screenprint("Draw Circle gradient");
   float smoothness = 10.0f;
   float points = 32.0f;
   float2 direction = {1.0f, 0.0f};

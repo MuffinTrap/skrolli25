@@ -29,6 +29,7 @@ struct Bunny Bunny_Load_UFBX(const char* filename)
 #   ifdef GEKKO
     bunny.fbx_mesh = Ufbx_GetFirstMesh(filename);
     bunny.mesh = Ufbx_LoadToMesh(bunny.fbx_mesh);
+    Ufbx_FreeScene();
 #endif
 
     bunny.format = Bunny_FBX;

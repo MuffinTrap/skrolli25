@@ -10,7 +10,9 @@ struct Gradient* select_gradient()
 	switch( (int)get_from_rocket(track_gradient_index))
 	{
 		case 0: grad = &rainbow_gradient; break;
-		case 1: grad = &halo_gradient; break;
+		case 1: grad = &cold_halo_gradient; break;
+		case 2: grad = &warm_halo_gradient; break;
+		case 3: grad = &cold_to_warm_gradient; break;
 		default: grad = &white_gradient; break;
 	}
 

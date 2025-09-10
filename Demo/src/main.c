@@ -104,7 +104,10 @@ static struct GradientTexture* matcaps;
 // Gradients
 static struct Gradient white_gradient;
 static struct Gradient rainbow_gradient;
-static struct Gradient halo_gradient;
+static struct Gradient cold_halo_gradient;
+static struct Gradient warm_halo_gradient;
+static struct Gradient cold_to_warm_gradient;
+
 
 // Gosper curve fx
 static PointList gosper_list;
@@ -167,17 +170,46 @@ void ctoy_begin(void)
 		Gradient_PushColor(&white_gradient, ColorManager_GetName(ColorWhite), 1.0f);
 	}
 
-	halo_gradient = Gradient_CreateEmpty(GradientCircle, GradientLoopRepeat);
+	cold_halo_gradient = Gradient_CreateEmpty(GradientCircle, GradientLoopRepeat);
 	{
-		Gradient_PushName(&halo_gradient, ColorBlackBlue, 0.0f);
-		Gradient_PushName(&halo_gradient, ColorBlue, 0.40f);
-		Gradient_PushName(&halo_gradient, ColorCyanBlue, 0.49f);
-		Gradient_PushName(&halo_gradient, ColorWhite, 0.5f);
-		Gradient_PushName(&halo_gradient, ColorCyanBlue, 0.51);
-		Gradient_PushName(&halo_gradient, ColorBlue, 0.60f);
-		Gradient_PushName(&halo_gradient, ColorBlackBlue, 1.0f);
+		Gradient_PushName(&cold_halo_gradient, ColorBlackBlue, 0.0f);
+		Gradient_PushName(&cold_halo_gradient, ColorBlue, 0.40f);
+		Gradient_PushName(&cold_halo_gradient, ColorCyanBlue, 0.49f);
+		Gradient_PushName(&cold_halo_gradient, ColorWhite, 0.5f);
+		Gradient_PushName(&cold_halo_gradient, ColorCyanBlue, 0.51);
+		Gradient_PushName(&cold_halo_gradient, ColorBlue, 0.60f);
+		Gradient_PushName(&cold_halo_gradient, ColorBlackBlue, 1.0f);
 
 	}
+
+	warm_halo_gradient = Gradient_CreateEmpty(GradientCircle, GradientLoopRepeat);
+	{
+		Gradient_PushName(&warm_halo_gradient, ColorDarkOrange, 0.0f);
+		Gradient_PushName(&warm_halo_gradient, ColorOrange, 0.40f);
+		Gradient_PushName(&warm_halo_gradient, ColorLightOrange, 0.49f);
+		Gradient_PushName(&warm_halo_gradient, ColorWhite, 0.5f);
+		Gradient_PushName(&warm_halo_gradient, ColorLightOrange, 0.51);
+		Gradient_PushName(&warm_halo_gradient, ColorOrange, 0.60f);
+		Gradient_PushName(&warm_halo_gradient, ColorDarkOrange, 1.0f);
+	}
+
+	cold_to_warm_gradient = Gradient_CreateEmpty(GradientVertical, GradientLoopMirror);
+	{
+		enum ColorName cold2warm[] = {
+			ColorRose,
+			ColorDarkOrange,
+			ColorOrange,
+			ColorLightOrange,
+
+			ColorGreen,
+			ColorOliveGreen,
+			ColorBlue,
+
+			ColorCyanBlue
+		};
+		Gradient_PushColorArray(&cold_to_warm_gradient, cold2warm,8 );
+	}
+
 
 	// Create flake meshes
 	rotation_outer = PointList_create(6);
@@ -266,44 +298,38 @@ void fx_eva_bunny()
 	start_frame_2D();
 	glPushMatrix();
 
+		// Draw halo gradient
 		glTranslatef(center_x, center_y, 0.0f);
 		glScalef(1.0f, 1.0f, 1.0f);
 
 		GradientTexture_DrawGradient(grad, GradientCutout, gradient_size, offset);
 
+		// Draw 2 bunnies overlaid with gradient
 		grad->shape = GradientVertical;
 		text->alphamode = GradientMultiply;
 
-		glPushMatrix();
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, text->gl_texture_name);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		// Bunny one with gradient
+		glPushMatrix();
 			glTranslatef(left_bunny_pos.x, left_bunny_pos.y, 0.0f);
-		GradientTexture_DrawVerticalGradient(grad, bunny_size, true, offset);
-		/*
-		GradientTexture_DrawBunny(text, grad,
-								  left_bunny_pos, bunny_size, bunny_rot,
-							gradient_pos, gradient_size,
-							offset);
-							*/
+			GradientTexture_DrawVerticalGradient(grad, bunny_size, true, offset);
 		glPopMatrix();
 
+		// Bunny two with gradient
 		glPushMatrix();
 			glTranslatef(right_bunny_pos.x, right_bunny_pos.y, 0.0f);
 			glRotatef(180.0f, 0.0f, 0.0f, 1.0f);
-			float2 zero = {0.0f, 0.0f};
-
-		GradientTexture_DrawVerticalGradient(grad, bunny_size, true, offset);
-			//GradientTexture_DrawTexture(text, bunny_size);
-		/*
-			GradientTexture_DrawBunny(text, grad,
-								  zero, bunny_size, bunny_rot,
-							gradient_pos, gradient_size,
-							offset);
-							*/
-		glDisable(GL_BLEND);
+			GradientTexture_DrawVerticalGradient(grad, bunny_size, true, offset);
 		glPopMatrix();
+
+		glDisable(GL_BLEND);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisable(GL_TEXTURE_2D);
+
 	glPopMatrix();
 
 }
@@ -386,11 +412,19 @@ static void EnableLights()
 		GLfloat mat_shiny[] = {100.0};
 
 		float intensity = get_from_rocket(track_stanford_light_intensity);
+		float ambient_intensity = get_from_rocket(track_stanford_light_ambient_intensity);
 		color3 light_col = Gradient_GetColor(bg_grad, get_from_rocket(track_stanford_light_color));
 		color3 light_ambient_col = Gradient_GetColor(bg_grad, get_from_rocket(track_stanford_light_ambient_color));
 
-		GLfloat light_color[] = {light_col.r * intensity, light_col.g * intensity, light_col.b * intensity, 1.0f};
-		GLfloat ambient_light_color[] = {light_ambient_col.r * intensity, light_ambient_col.g * intensity, light_ambient_col.b * intensity, 1.0f};
+		GLfloat light_color[] = {
+			light_col.r * intensity,
+			light_col.g * intensity,
+			light_col.b * intensity, 1.0f};
+
+		GLfloat ambient_light_color[] = {
+			light_ambient_col.r * ambient_intensity,
+			light_ambient_col.g * ambient_intensity,
+			light_ambient_col.b * ambient_intensity, 1.0f};
 
 		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shiny);
@@ -697,7 +731,7 @@ void ctoy_main_loop(void)
 	float scene_number = get_from_rocket(track_scene);
 	int scene = (int)scene_number;
 
-	screenprintf("I am all ears");
+	screenprint("I am all ears");
 	screenprintf("Active scene %.0f", scene_number);
 	screenprintf("----------------", scene_number);
 
@@ -767,7 +801,7 @@ void ctoy_main_loop(void)
 			// Quit
 			break;
 	}
-	//screenprint_draw_prints();
+	screenprint_draw_prints();
 
 	ctoy_swap_buffer(NULL);
 }

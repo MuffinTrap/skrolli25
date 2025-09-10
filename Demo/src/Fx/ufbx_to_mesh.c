@@ -96,3 +96,13 @@ ufbx_mesh* Ufbx_GetFirstMesh(const char* fbx_filename)
     }
     return NULL;
 }
+
+void Ufbx_FreeScene()
+{
+    if (scene != NULL)
+    {
+        ufbx_free_scene(scene);
+        scene = NULL;
+    }
+
+}

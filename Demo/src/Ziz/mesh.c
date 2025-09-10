@@ -61,13 +61,13 @@ static void Setup_Arrays(struct Mesh* mesh)
     {
         glEnableClientState(GL_NORMAL_ARRAY);
         glNormalPointer(GL_FLOAT, 0, mesh->normals);
-        screenprintf("Mesh uses normals");
+        screenprint("Mesh uses normals");
     }
     if (mesh->texcoords != NULL && (mesh->enabled_attributes & AttributeTexcoord) != 0)
     {
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glTexCoordPointer(2, GL_FLOAT, 0, mesh->texcoords);
-        screenprintf("Mesh uses texcoords");
+        screenprint("Mesh uses texcoords");
     }
 
 }
@@ -284,7 +284,7 @@ void Mesh_GenerateMatcapUVs(struct Mesh* mesh)
             float modelViewMatrix[16];
             glGetFloatv(GL_MODELVIEW_MATRIX, modelViewMatrix);
             m_mat4_transpose(modelView, modelViewMatrix);
-            screenprintf("ModelviewMatrix");
+            screenprint("ModelviewMatrix");
             screenprintf("[%-0.2f %+.2f %+.2f %+.2f]", modelViewMatrix[0], modelViewMatrix[1], modelViewMatrix[2],modelViewMatrix[3] );
             screenprintf("[%-0.2f %+.2f %+.2f %+.2f]", modelViewMatrix[4], modelViewMatrix[5], modelViewMatrix[6],modelViewMatrix[7] );
             screenprintf("[%-0.2f %+.2f %+.2f %+.2f]", modelViewMatrix[8], modelViewMatrix[9], modelViewMatrix[10],modelViewMatrix[11] );
@@ -310,7 +310,7 @@ void Mesh_GenerateMatcapUVs(struct Mesh* mesh)
         }
     }
     */
-    screenprintf("Modelview");
+    screenprint("Modelview");
     screenprintf("[%-0.2f %+.2f %+.2f %+.2f]", modelView[0], modelView[1], modelView[2],modelView[3] );
     screenprintf("[%-0.2f %+.2f %+.2f %+.2f]", modelView[4], modelView[5], modelView[6],modelView[7] );
     screenprintf("[%-0.2f %+.2f %+.2f %+.2f]", modelView[8], modelView[9], modelView[10],modelView[11] );
@@ -335,7 +335,7 @@ void Mesh_GenerateMatcapUVs(struct Mesh* mesh)
 
 
 	// Overwrite UVs
-#define VERTICES_PER_FRAME 256
+#define VERTICES_PER_FRAME 8092
 
 	const float2 half = {0.5f, 0.5f};
     static int update_counter = 0;

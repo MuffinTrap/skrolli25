@@ -8,8 +8,6 @@
 
 #include "opengl_include.h"
 
-#define LINE_AMOUNT 120
-#define LINE_LENGTH 80
 static char * lineBuffer[LINE_AMOUNT];
 static int showIndex = 0;
 static int allocIndex = -1;
@@ -26,7 +24,21 @@ void screenprint_set_scale(float scaleParam)
 
 }
 
-void screenprintf(const char* formatString, ... )
+void screenprint_impl(const char* string)
+{
+    if (showIndex + 1 < LINE_AMOUNT)
+    {
+        if (showIndex > allocIndex)
+        {
+            lineBuffer[showIndex] = malloc(sizeof(char) * LINE_LENGTH);
+            allocIndex = showIndex;
+        }
+        strncpy(lineBuffer[showIndex], string, LINE_LENGTH);
+        showIndex++;
+    }
+
+}
+void screenprintf_impl(const char* formatString, ... )
 {
     static char screenprintBuffer[LINE_LENGTH];
 
@@ -47,7 +59,7 @@ void screenprintf(const char* formatString, ... )
     }
 }
 
-void screenprint_draw_prints(void)
+void screenprint_draw_prints_impl(void)
 {
     // Projection matrix
     glMatrixMode(GL_PROJECTION);

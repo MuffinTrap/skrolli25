@@ -57,8 +57,9 @@ static int track_rotation_illusion_progress;
 static int track_stanford_light_on;
 static int track_stanford_light_dir; // Rotation on X-axis
 static int track_stanford_light_color; // Pick color from active gradient
-static int track_stanford_light_ambient_color; // Pick color from active gradient
-static int track_stanford_light_intensity; // Pick color from active gradient
+static int track_stanford_light_intensity; //
+static int track_stanford_light_ambient_color; // Ambient color from gradient
+static int track_stanford_light_ambient_intensity; // Ambient color intensity
 static int track_stanford_triangle_percentage;
 
 // Matcap bunny
@@ -146,6 +147,7 @@ static void init_rocket_tracks(void)
 	track_stanford_light_dir = add_to_rocket("stfrd_light_dir");
     track_stanford_light_color = add_to_rocket("stfrd_light_color");
     track_stanford_light_ambient_color = add_to_rocket("stfrd_light_amb_color");
+    track_stanford_light_ambient_intensity = add_to_rocket("stfrd_amb_int");
     track_stanford_light_intensity = add_to_rocket("stfrd_light_intensity");
 	track_stanford_triangle_percentage = add_to_rocket("stfrd_tri_percentage");
 
