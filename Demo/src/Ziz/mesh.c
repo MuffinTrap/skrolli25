@@ -61,13 +61,13 @@ static void Setup_Arrays(struct Mesh* mesh)
     {
         glEnableClientState(GL_NORMAL_ARRAY);
         glNormalPointer(GL_FLOAT, 0, mesh->normals);
-        screenprint("Mesh uses normals");
+        //screenprint("Mesh uses normals");
     }
     if (mesh->texcoords != NULL && (mesh->enabled_attributes & AttributeTexcoord) != 0)
     {
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glTexCoordPointer(2, GL_FLOAT, 0, mesh->texcoords);
-        screenprint("Mesh uses texcoords");
+        //screenprint("Mesh uses texcoords");
     }
 
 }
@@ -284,11 +284,14 @@ void Mesh_GenerateMatcapUVs(struct Mesh* mesh)
             float modelViewMatrix[16];
             glGetFloatv(GL_MODELVIEW_MATRIX, modelViewMatrix);
             m_mat4_transpose(modelView, modelViewMatrix);
+
+           /*
             screenprint("ModelviewMatrix");
             screenprintf("[%-0.2f %+.2f %+.2f %+.2f]", modelViewMatrix[0], modelViewMatrix[1], modelViewMatrix[2],modelViewMatrix[3] );
             screenprintf("[%-0.2f %+.2f %+.2f %+.2f]", modelViewMatrix[4], modelViewMatrix[5], modelViewMatrix[6],modelViewMatrix[7] );
             screenprintf("[%-0.2f %+.2f %+.2f %+.2f]", modelViewMatrix[8], modelViewMatrix[9], modelViewMatrix[10],modelViewMatrix[11] );
             screenprintf("[%-.2f %+.2f %+.2f %+.2f]", modelViewMatrix[12], modelViewMatrix[13], modelViewMatrix[14],modelViewMatrix[15] );
+            */
         }
         else
         {
@@ -310,11 +313,13 @@ void Mesh_GenerateMatcapUVs(struct Mesh* mesh)
         }
     }
     */
+    /*
     screenprint("Modelview");
     screenprintf("[%-0.2f %+.2f %+.2f %+.2f]", modelView[0], modelView[1], modelView[2],modelView[3] );
     screenprintf("[%-0.2f %+.2f %+.2f %+.2f]", modelView[4], modelView[5], modelView[6],modelView[7] );
     screenprintf("[%-0.2f %+.2f %+.2f %+.2f]", modelView[8], modelView[9], modelView[10],modelView[11] );
     screenprintf("[%-.2f %+.2f %+.2f %+.2f]", modelView[12], modelView[13], modelView[14],modelView[15] );
+    */
 
     float inverseView[16] = M_MAT4_IDENTITY();
     float normalMatrix[16] = M_MAT4_IDENTITY();
@@ -338,6 +343,8 @@ void Mesh_GenerateMatcapUVs(struct Mesh* mesh)
 #define VERTICES_PER_FRAME 8092
 
 	const float2 half = {0.5f, 0.5f};
+
+    /*
     static int update_counter = 0;
     int target = (update_counter + VERTICES_PER_FRAME);
     bool restart_counter = false;
@@ -346,6 +353,10 @@ void Mesh_GenerateMatcapUVs(struct Mesh* mesh)
         target = mesh->vertex_count;
         restart_counter = true;
     }
+    */
+
+    int update_counter = 0;
+    int target = mesh->vertex_count;
     int v = 0;
     int uv = 0;
 
@@ -409,6 +420,7 @@ void Mesh_GenerateMatcapUVs(struct Mesh* mesh)
 	}
 	FlushGPUCache(mesh->texcoords, mesh->vertex_count * sizeof(float) * 2);
 
+    /*
     if (restart_counter)
     {
         update_counter = 0;
@@ -417,4 +429,5 @@ void Mesh_GenerateMatcapUVs(struct Mesh* mesh)
     {
         update_counter = target;
     }
+    */
 }

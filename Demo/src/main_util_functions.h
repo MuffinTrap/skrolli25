@@ -38,18 +38,26 @@ struct Gradient* select_gradient()
 	}
 	return grad;
 }
-struct GradientTexture* select_matcap()
+struct GradientTexture* select_matcap(int track)
 {
 	struct GradientTexture* text;
-	int texture_index = (int)get_from_rocket(track_matcap_index);
-	screenprintf("Selected matcap %d", texture_index);
-	if (texture_index >= 0 && texture_index < 6)
+	int texture_index = (int)get_from_rocket(track);
+	screenprintf("Selected matcap %d", texture_index + 1);
+	if (texture_index >= 0 && texture_index < MATCAP_AMOUNT)
 	{
 		text = &matcaps[texture_index];
 	}
 	else
 	{
-		text = NULL;
+		if (ctoy_t() % 2 == 0)
+		{
+			screenprint("! Invalid matcap index !");
+		}
+		else
+		{
+			screenprint(" ");
+		}
+		text = &matcaps[0];
 	}
 	return text;
 }

@@ -110,27 +110,26 @@ void Gosper_B(struct PointList* points, short recursion_level)
 
 
 
-struct PointList Gosper_Create(float2 start, float2 start_dir, float step_length, float path_width, short recursion_level)
+void Gosper_Create(struct PointList* points, float2 start, float2 start_dir, float step_length, float path_width, short recursion_level)
 {
-    PointList points = PointList_create(128);
-
+    PointList_clear(points);
     latest = start;
     direction = start_dir;
     step = step_length;
     half_width = path_width / 2.0f;
     M_RIGHT_ANGLE2(to_right, direction);
+    M_SCALE2(to_right, to_right, half_width);
 
     M_SUB2(left, latest, to_right);
     M_ADD2(right, latest, to_right);
-    PointList_push_point(&points, left);
-    PointList_push_point(&points, right);
+    PointList_push_point(points, left);
+    PointList_push_point(points, right);
 
-    Gosper_A(&points, recursion_level);
-    printf("Created gosper curve with %d points\n", points.used_size);
-    return points;
+    Gosper_A(points, recursion_level);
+    //printf("Created gosper curve with %d points\n", points->used_size);
 }
 
-float2 Gosper_Draw(struct PointList* list, struct Gradient* gradient, float amount)
+float2 Gosper_Draw(struct PointList* list, struct Gradient* gradient, float amount, float gradient_offset)
 {
     // TODO use quads
     // store to list when there is a turn
@@ -141,7 +140,7 @@ float2 Gosper_Draw(struct PointList* list, struct Gradient* gradient, float amou
     // Last is always odd number
     int last_index = M_MIN( list->used_size, (int)floor(amount) * 2 -1);
     float gradient_step = 1.0f / (float)list->used_size;
-    float gradient_stop = 0.0f;
+    float gradient_stop = gradient_offset;
 
     for(int i = 0; i < last_index; i += 2)
     {

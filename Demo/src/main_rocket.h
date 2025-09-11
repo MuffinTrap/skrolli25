@@ -48,7 +48,8 @@ static int track_flake_wheel_shape_color;
 
 // Gosper curve
 static int track_gosper_segments;
-static int track_gosper_follow_on;
+static int track_gosper_follow_mix; // 0: no follow 1: full follow
+static int track_gosper_width;
 
 // Rotation illusion
 static int track_rotation_illusion_progress;
@@ -64,6 +65,12 @@ static int track_stanford_triangle_percentage;
 
 // Matcap bunny
 static int track_matcap_index;
+static int track_matcap_index2;
+static int track_matcap_index3;
+static int track_matcap_amount; // How many matcap bunnies and scissors to do : max 3
+
+static int track_matcap_alpha; // Alpha of first matcap
+static int track_matcap_base_on;
 
 // TODO Scissors rectangles
 static int track_scissor_1_cut;
@@ -72,6 +79,15 @@ static int track_scissor_1_right;
 static int track_scissor_1_top;
 static int track_scissor_1_bottom;
 
+static int track_scissor_2_left;
+static int track_scissor_2_right;
+static int track_scissor_2_top;
+static int track_scissor_2_bottom;
+
+static int track_scissor_3_left;
+static int track_scissor_3_right;
+static int track_scissor_3_top;
+static int track_scissor_3_bottom;
 
 // Variables
 
@@ -135,8 +151,9 @@ static void init_rocket_tracks(void)
     track_flake_wheel_shape_color = add_to_rocket("wheel_shape_color");
 
 	// Gosper curve tracks
-	track_gosper_follow_on = add_to_rocket("gosper_follow");
+	track_gosper_follow_mix = add_to_rocket("gosper_follow");
 	track_gosper_segments = add_to_rocket("gosper_segments");
+	track_gosper_width = add_to_rocket("gosper_width");
 
 	// Rotation illusion
 	track_rotation_illusion_progress = add_to_rocket("illusion_progress");
@@ -153,12 +170,28 @@ static void init_rocket_tracks(void)
 
 
 	// Matcap & scissors
+	track_matcap_amount = add_to_rocket("matcap_amount");
+	track_matcap_alpha = add_to_rocket("matcap1_alpha");
+
+	track_matcap_base_on = add_to_rocket("matcap_base_on");
 
 	track_matcap_index = add_to_rocket("matcap_index");
+	track_matcap_index2 = add_to_rocket("matcap_index2");
+	track_matcap_index3 = add_to_rocket("matcap_index3");
 
 	track_scissor_1_cut = add_to_rocket("scissors_1_cut");
 	track_scissor_1_left= add_to_rocket("scissors_1_left");
 	track_scissor_1_right= add_to_rocket("scissors_1_right");
 	track_scissor_1_top= add_to_rocket("scissors_1_top");
 	track_scissor_1_bottom= add_to_rocket("scissors_1_bottom");
+
+	track_scissor_2_left= add_to_rocket("scissors_2_left");
+	track_scissor_2_right= add_to_rocket("scissors_2_right");
+	track_scissor_2_top= add_to_rocket("scissors_2_top");
+	track_scissor_2_bottom= add_to_rocket("scissors_2_bottom");
+
+	track_scissor_3_left= add_to_rocket("scissors_3_left");
+	track_scissor_3_right= add_to_rocket("scissors_3_right");
+	track_scissor_3_top= add_to_rocket("scissors_3_top");
+	track_scissor_3_bottom= add_to_rocket("scissors_3_bottom");
 }
