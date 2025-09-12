@@ -129,7 +129,7 @@ void Gosper_Create(struct PointList* points, float2 start, float2 start_dir, flo
     //printf("Created gosper curve with %d points\n", points->used_size);
 }
 
-float2 Gosper_Draw(struct PointList* list, struct Gradient* gradient, float amount, float gradient_offset)
+float2 Gosper_Draw(struct PointList* list, struct Gradient* gradient, float amount, float gradient_offset, float gradient_step_prct)
 {
     // TODO use quads
     // store to list when there is a turn
@@ -139,7 +139,7 @@ float2 Gosper_Draw(struct PointList* list, struct Gradient* gradient, float amou
     glBegin(GL_QUAD_STRIP);
     // Last is always odd number
     int last_index = M_MIN( list->used_size, (int)floor(amount) * 2 -1);
-    float gradient_step = 1.0f / (float)list->used_size;
+    float gradient_step = gradient_step_prct / 100.0f;
     float gradient_stop = gradient_offset;
 
     for(int i = 0; i < last_index; i += 2)

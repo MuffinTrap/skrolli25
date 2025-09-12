@@ -117,6 +117,10 @@ static float gosper_lenght = 5.0f;
 static short gosper_recursion = 3;
 static float gosper_width = 2.0f;
 
+
+// Demo status
+static bool demo_over = false;
+
 #include "main_rocket.h"
 
 struct GradientTexture LoadImage(const char* filename)
@@ -129,6 +133,7 @@ struct GradientTexture LoadImage(const char* filename)
 		GradientMultiply);
 	return text;
 }
+
 
 void ctoy_begin(void)
 {
@@ -389,6 +394,8 @@ void fx_gosper_curve()
 	short y = get_from_rocket(track_translate_y);
 	float rotz = get_from_rocket(track_rotation_z);
 	float scale = get_from_rocket(track_scale_xyz);
+
+	float grad_step = get_from_rocket(track_gosper_grad_step);
 	start_frame_2D();
 	glPushMatrix();
 
@@ -405,8 +412,45 @@ void fx_gosper_curve()
 			// TODO Smooth follow of target
 			glTranslatef(target_x, target_y, 0.0f);
 			last_point = Gosper_Draw(&gosper_list, select_gradient(), get_from_rocket(track_gosper_segments),
-									 get_from_rocket(track_gradient_offset));
+									 get_from_rocket(track_gradient_offset), grad_step);
 		glPopMatrix();
+	glPopMatrix();
+}
+
+void fx_hexa_gopher()
+{
+	start_frame_3D();
+	float2 gstart = {00.0f, 00.0f};
+	float2 gdir = {0.0f, 1.0f};
+	gosper_width = get_from_rocket(track_gosper_width) + 0.01f;
+	Gosper_Create(&gosper_list, gstart, gdir, gosper_lenght, gosper_width, gosper_recursion);
+	static float2 last_point;
+	float rotz = get_from_rocket(track_rotation_z);
+	float scale = get_from_rocket(track_scale_xyz);
+	float grad_step = get_from_rocket(track_gosper_grad_step);
+	float grad_offset = get_from_rocket(track_gradient_offset);
+
+	float2 corners[6];
+	get_corners(gstart, 6, 10.0f, 0.0f, corners);
+
+
+	glPushMatrix();
+
+		translate_by_rocket(0.0f, 0.0f);
+		rotate_by_rocket();
+		glScalef(scale, scale, scale);
+
+
+		for (int i = 0; i < 6; i++)
+		{
+			glPushMatrix();
+
+				glTranslatef(corners[0].x, corners[0].y, 0.0f);
+				glRotatef(360.0f/6.0f * i, 1.0f, 0.0f, 1.0f);
+				last_point = Gosper_Draw(&gosper_list, select_gradient(), get_from_rocket(track_gosper_segments),
+										grad_offset, grad_step);
+			glPopMatrix();
+		}
 	glPopMatrix();
 }
 
@@ -936,8 +980,7 @@ void ctoy_main_loop(void)
 			fx_matcap_bunny();
 			break;
 		case 7:
-			// TODO Many bunnies
-			// Bunny flock
+			fx_hexa_gopher();
 			break;
 
 		case 8:
@@ -954,12 +997,20 @@ void ctoy_main_loop(void)
 
 		case 99:
 			// Black screen
+			start_frame_2D();
 			break;
 		case 999:
+			demo_over = true;
 			// Quit
 			break;
 	}
 	//screenprint_draw_prints();
 
 	ctoy_swap_buffer(NULL);
+}
+
+bool ctoy_demo_over(void)
+{
+	return demo_over;
+
 }

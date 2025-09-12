@@ -14,6 +14,8 @@ void ctoy_end(void);
 #define CTOY_CHAR_MAX 256 // maximum characters per update
 #define CTOY_PEN_DATA_MAX 256 // maximum pen tablet data per update
 
+// Status on Wii
+bool ctoy_demo_over();
 
 
 /* Time */

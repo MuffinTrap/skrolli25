@@ -47,7 +47,6 @@ void grrlib_init()
 
 
     GRRLIB_InitVideo();
-    //GRRLIB_Start();
     ogx_initialize();
 }
 
@@ -58,6 +57,7 @@ int main()
     ctoy_begin();
 
     // Wait loop for recording
+    /*
     while(true)
     {
         WPAD_ScanPads();
@@ -67,6 +67,7 @@ int main()
             break;
         }
     }
+    */
 
     struct Mp3Song song = Mp3_LoadSong("assets/Brian-Psy_Rabbit.mp3");
     if (song.mp3file != NULL)
@@ -84,6 +85,11 @@ int main()
         {
             break;
         }
+        if (ctoy_demo_over() == true)
+        {
+            break;
+        }
+
 		u64 now = gettime();
 		deltaTimeS = (float)(now - deltaTimeStart) / (float)(TB_TIMER_CLOCK * 1000); // division is to convert from ticks to seconds
 		deltaTimeStart = now;
@@ -92,22 +98,20 @@ int main()
         // Do rocket udpdate
         set_rocket_track_seconds(elapsedTimeS);
 
-
         ctoy_main_loop();
 
-        //GRRLIB_FillScreen(0xffffffff);
-        //GRRLIB_Rectangle(40, 40, 100, 100, 0xff4466ff, 1);
-        /*
-        glBegin(GL_LINES);
-        glColor3f(1.0f, 1.0f, 1.0f);
-        glVertex2f(10.0f, 10.0f);
-        glVertex2f(100.0f, 100.0f);
-        glEnd();
-        */
     }
 
     Mp3_Stop(&song);
     ctoy_end();
+
+    // Exit gracefully
+	ICSync();
+	VIDEO_SetBlack(TRUE);
+	VIDEO_Flush();
+	VIDEO_WaitVSync();
+	VIDEO_WaitVSync();
+	exit(0);
 }
 
 

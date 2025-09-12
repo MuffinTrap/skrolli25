@@ -14,7 +14,7 @@ void Gosper_Create(struct PointList* list, float2 start, float2 start_dir, float
  * @param amount How many segments to draw. 3.5 draws 3 full and a half segment
  * @return The point that was drawn last
  */
-float2 Gosper_Draw(struct PointList* points, struct Gradient* gradient, float amount, float gradient_offset);
+float2 Gosper_Draw(struct PointList* points, struct Gradient* gradient, float amount, float gradient_offset, float gradient_step_prct);
 
 void Gosper_A(struct PointList* points, short recursion_level);
 void Gosper_B(struct PointList* points, short recursion_level);

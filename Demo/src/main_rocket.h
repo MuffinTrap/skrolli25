@@ -50,6 +50,7 @@ static int track_flake_wheel_shape_color;
 static int track_gosper_segments;
 static int track_gosper_follow_mix; // 0: no follow 1: full follow
 static int track_gosper_width;
+static int track_gosper_grad_step; // [0,100] how much to advance in gradient per segment
 
 // Rotation illusion
 static int track_rotation_illusion_progress;
@@ -154,6 +155,7 @@ static void init_rocket_tracks(void)
 	track_gosper_follow_mix = add_to_rocket("gosper_follow");
 	track_gosper_segments = add_to_rocket("gosper_segments");
 	track_gosper_width = add_to_rocket("gosper_width");
+	track_gosper_grad_step = add_to_rocket("gosper_grad_step");
 
 	// Rotation illusion
 	track_rotation_illusion_progress = add_to_rocket("illusion_progress");

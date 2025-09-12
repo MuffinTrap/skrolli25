@@ -51,6 +51,12 @@ Demo/.kdev4/
 
 # Work files
 Work/
+# Release candidates
+RC1/
+RC2/
+
+# Releases
+*.zip
 
 # Temp files
 *.png~

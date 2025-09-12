@@ -1,4 +1,15 @@
-Music:
+Music: Brian
+Bunny pictures: Caito, Lynn
+Code: Muffintrap
+Direction: Muffintrap
+3D Model: Stanford University
 
-Space Blockbuster by Soulbringer from Free Music Archive (CC BY)
-Goa Trolls by Soulbringer from Free Music Archive (CC BY)
+Tools used:
+    Ziz
+    KDevelop
+    Rocket
+    GRRLIB
+
+
+
+
